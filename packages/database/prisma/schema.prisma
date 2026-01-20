@@ -1,0 +1,150 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  githubId      String?   @unique
+  githubToken   String?   @db.Text // Encrypted GitHub access token for private repos
+  tokenExpiry   DateTime? // Track token expiration
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  scans         Scan[]
+  favorites     FavoriteRepository[]
+  
+  @@map("users")
+}
+
+model Scan {
+  id            String    @id @default(cuid())
+  userId        String?
+  repositoryId  String?   // Link to Repository model
+  repoUrl       String
+  branch        String    @default("main")
+  status        ScanStatus @default(QUEUED)
+  isPrivate     Boolean   @default(false) // Track if repo is private
+  
+  // Results
+  results       Json?     // Full analysis results
+  summary       Json?     // Quick summary for list views
+  errorMessage  String?
+  
+  // Analysis details
+  languageStats Json?     // Language breakdown
+  dependencies  Json?     // Dependency graph data
+  riskScores    Json?     // Risk analysis results
+  readmeAnalysis Json?    // README quality and suggestions
+  circularDeps  Json?     // Circular dependency issues
+  deadCode      Json?     // Unused code detection
+  
+  // Metadata
+  startedAt     DateTime?
+  completedAt   DateTime?
+  processingTime Int?     // Seconds taken
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user          User?     @relation(fields: [userId], references: [id])
+  repository    Repository? @relation(fields: [repositoryId], references: [id])
+  versions      ScanVersion[] // For historical tracking
+  
+  @@index([userId])
+  @@index([repositoryId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("scans")
+}
+
+enum ScanStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Repository {
+  id            String    @id @default(cuid())
+  fullName      String    @unique // e.g., "owner/repo"
+  url           String
+  description   String?
+  stars         Int       @default(0)
+  language      String?
+  isPrivate     Boolean   @default(false)
+  
+  // Cache scan results
+  lastScanId    String?
+  lastScannedAt DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  scans         Scan[]
+  favorites     FavoriteRepository[]
+  
+  @@index([lastScannedAt])
+  @@index([isPrivate])
+  @@map("repositories")
+}
+
+// New model for historical tracking
+model ScanVersion {
+  id            String    @id @default(cuid())
+  scanId        String
+  versionNumber Int       // Incremental version
+  commitSha     String?   // Git commit SHA at time of scan
+  
+  // Snapshot of results for comparison
+  results       Json
+  riskScores    Json?
+  dependencies  Json?
+  
+  createdAt     DateTime  @default(now())
+  
+  scan          Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  @@unique([scanId, versionNumber])
+  @@index([scanId])
+  @@map("scan_versions")
+}
+
+// New model for user favorites
+model FavoriteRepository {
+  id           String     @id @default(cuid())
+  userId       String
+  repositoryId String
+  
+  createdAt    DateTime   @default(now())
+  
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, repositoryId])
+  @@index([userId])
+  @@map("favorite_repositories")
+}
+
+model ApiKey {
+  id            String    @id @default(cuid())
+  userId        String
+  key           String    @unique
+  name          String
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId])
+  @@map("api_keys")
+}

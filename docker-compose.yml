@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: repolens-postgres
+    environment:
+      POSTGRES_USER: repolens
+      POSTGRES_PASSWORD: repolens_dev_password
+      POSTGRES_DB: repolens
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U repolens']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: repolens-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: repolens-api
+    ports:
+      - '3001:3001'
+    environment:
+      - DATABASE_URL=postgresql://repolens:repolens_dev_password@postgres:5432/repolens
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: apps/worker
+      dockerfile: Dockerfile
+    container_name: repolens-worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SANDBOX_DIR=/tmp/repolens-sandboxes
+    volumes:
+      - /tmp/repolens-sandboxes:/tmp/repolens-sandboxes
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
