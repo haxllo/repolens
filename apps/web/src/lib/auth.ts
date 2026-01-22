@@ -20,13 +20,21 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('Auth: Attempting sign in', { email: user.email, provider: account?.provider });
+      console.log('Auth: Attempting sign in', { 
+        email: user.email, 
+        provider: account?.provider,
+        hasProfile: !!profile,
+        profileId: (profile as any)?.id
+      });
       try {
         await prisma.$queryRaw`SELECT 1`;
         console.log('Auth: Database connection verified');
       } catch (e: any) {
-        console.error('Auth: Database connection failed!', e.message);
-        return false; // Fail early if DB is down
+        console.error('Auth: Database connection failed!', {
+          message: e.message,
+          stack: e.stack
+        });
+        return false;
       }
       return true;
     },

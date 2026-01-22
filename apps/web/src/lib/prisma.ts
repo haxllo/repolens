@@ -1,7 +1,9 @@
 import { PrismaClient } from '@repolens/database'
 
 const prismaClientSingleton = () => {
-  return new PrismaClient()
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  })
 }
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>
