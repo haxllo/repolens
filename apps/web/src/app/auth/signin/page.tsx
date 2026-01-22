@@ -1,14 +1,50 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useSession } from 'next-auth/react'
+import { redirect, useSearchParams } from 'next/navigation'
 import { SignInButton } from '@/components/SignInButton'
-import { Zap } from 'lucide-react'
+import { Zap, AlertCircle } from 'lucide-react'
+import { useEffect } from 'react'
 
-export default async function SignInPage() {
-  const session = await getServerSession(authOptions)
+export default function SignInPage() {
+  const { data: session, status } = useSession()
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
-  if (session) {
-    redirect('/dashboard')
+  useEffect(() => {
+    if (status === 'authenticated') {
+      redirect('/dashboard')
+    }
+  }, [status])
+
+  const getErrorMessage = (error: string) => {
+    switch (error) {
+      case 'Signin':
+      case 'OAuthSignin':
+      case 'OAuthCallback':
+      case 'OAuthCreateAccount':
+      case 'EmailCreateAccount':
+      case 'Callback':
+        return 'There was a problem linking your GitHub account. Please try again or check your database connection.'
+      case 'OAuthAccountNotLinked':
+        return 'To confirm your identity, please sign in with the same account you used originally.'
+      case 'EmailSignin':
+        return 'The e-mail could not be sent.'
+      case 'CredentialsSignin':
+        return 'Sign in failed. Check the details you provided are correct.'
+      case 'SessionRequired':
+        return 'Please sign in to access this page.'
+      default:
+        return 'An unexpected authentication error occurred.'
+    }
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -31,6 +67,16 @@ export default async function SignInPage() {
             Analyze your GitHub repositories with AI-powered insights
           </p>
         </div>
+
+        {error && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <div className="text-sm font-medium">
+              <p className="font-bold mb-0.5">Authentication Error</p>
+              <p className="opacity-80">{getErrorMessage(error)}</p>
+            </div>
+          </div>
+        )}
 
         <div className="glass rounded-2xl p-8">
           <SignInButton />
