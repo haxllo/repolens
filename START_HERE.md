@@ -1,238 +1,109 @@
-# ✅ RepoLens - Quick Start Commands
+# 🚀 START HERE - RepoLens
 
-## All Systems Ready!
-
-Your RepoLens setup is complete. Follow these steps to run the full application:
+Welcome! This is your starting point for RepoLens setup.
 
 ---
 
-## 🚀 Start All Services (3 Terminals Required)
+## 📋 What is RepoLens?
 
-### Terminal 1: Worker (Python)
-
-```bash
-cd apps/worker
-./start.sh
-```
-
-**Expected output:**
-
-```
-Starting RepoLens worker...
-INFO - Connected to Redis
-INFO - Listening for jobs on bull:repo-analysis:wait
-```
+**AI-powered GitHub repository analysis platform**
+- Deep code analysis with AST parsing  
+- AI-generated architecture summaries
+- Code quality metrics and tech stack detection
+- Historical tracking and comparisons
 
 ---
 
-### Terminal 2: Frontend (Next.js)
+## 🎯 Quick Links
 
-```bash
-npm run dev --filter=@repolens/web
-```
+### 🌐 Cloud Deployment (Recommended)
+**Deploy to production in 30 minutes - 100% FREE tier!**
 
-**Expected output:**
+📖 **[CLOUD_SETUP.md](./CLOUD_SETUP.md)** - Complete cloud deployment guide
 
-```
-> @repolens/web@0.1.0 dev
-> next dev
-
-  ▲ Next.js 14.1.0
-  - Local:        http://localhost:3000
-```
+**Stack:**
+- Frontend: Vercel (FREE)
+- Backend: Render - Combined API+Worker (FREE)
+- Database: Neon PostgreSQL (FREE)
+- Redis: Upstash (FREE)
 
 ---
 
-### Terminal 3: API Gateway (NestJS)
+### 💻 Local Development  
+**Run locally for development/testing**
 
-```bash
-npm run dev --filter=@repolens/api
-```
+📖 **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Local development setup
 
-**Expected output:**
-
-```
-[Nest] INFO [NestApplication] Nest application successfully started
-🚀 API Gateway running on http://localhost:3001/api
-```
+**Requirements:**
+- Node.js 18+
+- Python 3.11+
+- Docker (optional)
 
 ---
 
-## ⚙️ Before You Can Sign In
+## 📚 All Documentation
 
-You need to configure GitHub OAuth:
-
-### 1. Create GitHub OAuth App
-
-Visit: https://github.com/settings/developers
-
-- Click **"New OAuth App"**
-- Fill in:
-  - **Application name**: `RepoLens Local Dev`
-  - **Homepage URL**: `http://localhost:3000`
-  - **Authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
-- Click **"Register application"**
-- Copy the **Client ID**
-- Generate and copy a **Client Secret**
-
-### 2. Update Environment File
-
-Edit `apps/web/.env.local`:
-
-```bash
-# Replace these values:
-GITHUB_CLIENT_ID=your_actual_client_id_here
-GITHUB_CLIENT_SECRET=your_actual_client_secret_here
-
-# Generate a secret:
-NEXTAUTH_SECRET=$(openssl rand -base64 32)
-```
-
-Run this to generate the secret:
-
-```bash
-openssl rand -base64 32
-```
-
-### 3. (Optional) Add Gemini API Key
-
-For AI-powered explanations, edit `apps/worker/.env`:
-
-```bash
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-Get a free key at: https://makersuite.google.com/app/apikey
+- **[README.md](./README.md)** - Project overview
+- **[CLOUD_SETUP.md](./CLOUD_SETUP.md)** - Cloud deployment (FREE tier)
+- **[COMBINED_DEPLOYMENT.md](./COMBINED_DEPLOYMENT.md)** - Combined API+Worker details
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Local development guide
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical architecture  
+- **[PROJECT_STATUS.md](./PROJECT_STATUS.md)** - Roadmap & status
+- **[DECISIONS.md](./DECISIONS.md)** - Design decisions
+- **[PRD.md](./PRD.md)** - Product requirements
 
 ---
 
-## 🎉 Test the Application
+## 🔑 What You Need
 
-1. **Open your browser**: http://localhost:3000
-2. **Click "Sign in with GitHub"**
-3. **Authorize the app**
-4. **Try scanning a repository**:
-   - Enter a GitHub URL (e.g., `https://github.com/vercel/next.js`)
-   - Click "Scan Repository"
-   - Wait for analysis (1-5 minutes)
-   - View results!
+### API Keys Required
+
+1. **GitHub OAuth** → https://github.com/settings/developers
+2. **OpenRouter** (FREE) → https://openrouter.ai/keys  
+3. **Gemini** (Alternative) → https://aistudio.google.com/app/apikey
 
 ---
 
-## 🔍 Health Checks
+## 🏗️ Architecture
 
-Verify everything is working:
-
-```bash
-# Check API health
-curl http://localhost:3001/api/health
-
-# Check PostgreSQL
-docker exec repolens-postgres psql -U repolens -d repolens -c "SELECT 'OK' as status;"
-
-# Check Redis
-docker exec repolens-redis redis-cli ping
-
-# Check services
-docker-compose ps
 ```
+Frontend (Vercel) → API + Worker (Render) → Neon (DB) + Upstash (Redis)
+```
+
+Why combined? Render charges for workers, so we run API + Worker in one container = FREE!
 
 ---
 
-## 🛑 Stopping Services
+## ⚡ Quick Start
 
-**Stop Docker containers:**
+**Cloud Deployment (5 steps):**
+1. Create Neon database
+2. Create Upstash Redis
+3. Deploy to Render (combined)
+4. Deploy to Vercel (frontend)
+5. Initialize database schema
 
-```bash
-docker-compose down
-```
-
-**Stop dev servers:**
-Press `Ctrl+C` in each terminal
-
----
-
-## 📁 Useful Commands
-
-```bash
-# View database in browser
-cd packages/database && npx prisma studio
-# Opens at http://localhost:5555
-
-# View logs
-docker-compose logs -f postgres
-docker-compose logs -f redis
-
-# Restart database
-docker-compose restart postgres
-
-# Clean everything
-npm run clean
-docker-compose down -v
-```
+📖 Full guide: [CLOUD_SETUP.md](./CLOUD_SETUP.md)
 
 ---
 
 ## 🐛 Common Issues
 
-### Port already in use
+- **Redis errors**: Use `rediss://` (with TLS)
+- **CORS errors**: Remove trailing slash from FRONTEND_URL
+- **Worker not processing**: Check both API+Worker started in logs
 
-```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
-
-# Or use different port
-PORT=3002 npm run dev --filter=@repolens/web
-```
-
-### Database connection failed
-
-```bash
-# Restart PostgreSQL
-docker-compose restart postgres
-sleep 5
-
-# Re-push schema
-cd packages/database && npx prisma db push
-```
-
-### Worker not processing jobs
-
-```bash
-# Check Redis
-redis-cli ping
-
-# Restart worker
-# Stop with Ctrl+C, then:
-cd apps/worker && ./start.sh
-```
+More: [CLOUD_SETUP.md Troubleshooting](./CLOUD_SETUP.md#troubleshooting)
 
 ---
 
-## 📚 Documentation
+## 🎓 Next Steps
 
-- **Setup Guide**: [GETTING_STARTED.md](./GETTING_STARTED.md)
-- **Development**: [DEVELOPMENT.md](./DEVELOPMENT.md)
-- **Deployment**: [DEPLOYMENT.md](./DEPLOYMENT.md)
-- **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **Project Status**: [PROJECT_STATUS.md](./PROJECT_STATUS.md)
-
----
-
-## ✨ What's Next?
-
-Once you have it running, you can:
-
-1. **Build the 3D dependency graph visualization**
-2. **Create the dashboard UI**
-3. **Add more language support**
-4. **Enhance AI prompts**
-5. **Deploy to production**
-
-See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for the full roadmap!
+1. Choose deployment method (Cloud or Local)
+2. Follow the relevant guide
+3. Test with a repository analysis
+4. Customize and contribute!
 
 ---
 
-**Happy coding! 🚀**
-
-_If you encounter any issues, check the documentation or create an issue on GitHub._
+**Ready?** → [CLOUD_SETUP.md](./CLOUD_SETUP.md) | [DEVELOPMENT.md](./DEVELOPMENT.md)
