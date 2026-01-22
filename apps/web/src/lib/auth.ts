@@ -21,6 +21,13 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       console.log('Auth: Attempting sign in', { email: user.email, provider: account?.provider });
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('Auth: Database connection verified');
+      } catch (e: any) {
+        console.error('Auth: Database connection failed!', e.message);
+        return false; // Fail early if DB is down
+      }
       return true;
     },
     async jwt({ token, user, account, profile }) {
@@ -49,6 +56,17 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+  },
+  logger: {
+    error(code, metadata) {
+      console.error('NextAuth Error:', code, metadata);
+    },
+    warn(code) {
+      console.warn('NextAuth Warning:', code);
+    },
+    debug(code, metadata) {
+      console.log('NextAuth Debug:', code, metadata);
+    },
   },
   events: {
     async signIn({ user, account, profile }) {
