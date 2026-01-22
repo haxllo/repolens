@@ -3,10 +3,11 @@
 
 ## Stack Overview
 - Frontend: Vercel (FREE)
-- API: Render (FREE)
-- Worker: Render (FREE)
+- Backend: Render - Combined API + Worker (FREE)
 - Database: Neon PostgreSQL (FREE)
 - Redis: Upstash (FREE)
+
+**💡 Note:** We run the API and Worker in a **single container** to stay on Render's free tier, since Background Workers are paid.
 
 ---
 
@@ -241,12 +242,12 @@ After deployment:
 
 ## ✅ STEP 8: Update Frontend API URL
 
-After Render gives you the API URL (e.g., `https://repolens-api.onrender.com`):
+After Render gives you the API URL (e.g., `https://repolens-combined.onrender.com`):
 
 1. Go to Vercel dashboard
 2. Select your project
 3. Go to Settings → Environment Variables
-4. Update `NEXT_PUBLIC_API_URL` to: `https://repolens-api.onrender.com`
+4. Update `NEXT_PUBLIC_API_URL` to: `https://repolens-combined.onrender.com`
 5. Redeploy
 
 ---
@@ -293,9 +294,10 @@ After Render gives you the API URL (e.g., `https://repolens-api.onrender.com`):
 - Check if Upstash database is active
 
 ### "Worker not processing jobs"
-- Check Render worker logs
-- Verify REDIS_URL matches API's Redis
-- Check GEMINI_API_KEY is valid
+- Check Render logs for both API and Worker startup messages
+- Verify REDIS_URL matches API's Redis config
+- Check OPENROUTER_API_KEY or GEMINI_API_KEY is valid
+- Both services run in same container on localhost
 
 ### "API 502/503 errors"
 - Render free tier sleeps after inactivity
