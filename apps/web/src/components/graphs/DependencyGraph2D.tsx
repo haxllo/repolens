@@ -179,16 +179,21 @@ export function DependencyGraph2D({
         ctx.font = `${isHovered ? 'bold ' : ''}${Math.max(10, 12 / scale)}px sans-serif`
         const textWidth = ctx.measureText(label).width
         const padding = 4 / scale
+        const rectX = node.x - textWidth / 2 - padding
+        const rectY = node.y + radius + (4 / scale)
+        const rectW = textWidth + padding * 2
+        const rectH = (16 / scale)
+        const radiusVal = 4 / scale
         
-        // Label background
+        // Label background with fallback for roundRect
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
-        ctx.roundRect(
-          node.x - textWidth / 2 - padding,
-          node.y + radius + (4 / scale),
-          textWidth + padding * 2,
-          (16 / scale),
-          4 / scale
-        )
+        ctx.beginPath()
+        if (ctx.roundRect) {
+          ctx.roundRect(rectX, rectY, rectW, rectH, radiusVal)
+        } else {
+          // Fallback to simple rect if roundRect is not supported
+          ctx.rect(rectX, rectY, rectW, rectH)
+        }
         ctx.fill()
 
         // Label text

@@ -19,23 +19,26 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const files = scanData?.ast?.files || [];
   const riskScores: Record<string, number> = {};
   
-  // Access risk scores (camelCase from backend)
-  if (scanData?.riskScores?.file_risks) {
-    scanData.riskScores.file_risks.forEach((risk: any) => {
-      riskScores[risk.file_path] = risk.risk_score;
+  // Access risk scores (camelCase from backend) with defensive checks
+  const fileRisks = scanData?.riskScores?.file_risks;
+  if (Array.isArray(fileRisks)) {
+    fileRisks.forEach((risk: any) => {
+      if (risk && risk.file_path) {
+        riskScores[risk.file_path] = risk.risk_score;
+      }
     });
   }
 
   const dependencies = scanData?.dependencies || {};
   
   const graphData = {
-    nodes: (dependencies.graph?.nodes || []).map((n: any) => ({
+    nodes: (Array.isArray(dependencies.graph?.nodes) ? dependencies.graph.nodes : []).map((n: any) => ({
       ...n,
-      name: n.label || n.id, // Map label to name for 3D graph
-      size: n.size || 10,    // Ensure size exists
-      color: n.type === 'root' ? '#a2e435' : '#3b82f6' // Basic coloring
+      name: n.label || n.id || 'Unknown',
+      size: n.size || 10,
+      color: n.type === 'root' ? '#a2e435' : '#3b82f6'
     })),
-    links: (dependencies.graph?.edges || []).map((e: any) => ({
+    links: (Array.isArray(dependencies.graph?.edges) ? dependencies.graph.edges : []).map((e: any) => ({
       source: e.source,
       target: e.target,
     })),

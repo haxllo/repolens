@@ -28,6 +28,8 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
     const root: FileNode = { name: "root", path: "", size: 0, children: [] };
 
     files.forEach((file) => {
+      if (!file || !file.path) return;
+      
       const parts = file.path.split("/");
       let current = root;
       const size = file.lines || file.lines_of_code || 0;
