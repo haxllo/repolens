@@ -19,35 +19,46 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account) {
-        console.log('SignIn Callback: Account linked', { provider: account.provider });
-        token.accessToken = account.access_token
-        token.githubId = (profile as any)?.id?.toString()
+    async signIn({ user, account, profile }) {
+      console.log('Auth: Attempting sign in', { email: user.email, provider: account?.provider });
+      return true;
+    },
+    async jwt({ token, user, account, profile }) {
+      // On first sign in, 'user' is the database user object
+      if (user) {
+        token.id = user.id;
       }
-      return token
+      if (account) {
+        token.accessToken = account.access_token;
+        token.githubId = (profile as any)?.id?.toString();
+      }
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub
-        session.accessToken = token.accessToken
-        session.githubId = token.githubId
+        session.user.id = (token.id as string) || (token.sub as string);
+        session.accessToken = token.accessToken as string;
+        session.githubId = token.githubId as string;
       }
-      return session
+      return session;
     },
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/signin', // Redirect back to signin on error
   },
   session: {
     strategy: 'jwt',
   },
   events: {
     async signIn({ user, account, profile }) {
-      console.log('SignIn Event: Success', { userId: user.id });
+      console.log('Auth Event: User signed in', { userId: user.id });
     },
     async createUser({ user }) {
-      console.log('User Created:', { userId: user.id });
+      console.log('Auth Event: User created in DB', { userId: user.id });
+    },
+    async linkAccount({ user, account }) {
+      console.log('Auth Event: Account linked in DB', { userId: user.id, provider: account.provider });
     },
   },
 }
