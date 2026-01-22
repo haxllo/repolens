@@ -106,7 +106,6 @@ function Edge({ start, end, color }: { start: [number, number, number]; end: [nu
       lineWidth={0.8} 
       opacity={0.2} 
       transparent 
-      attenuation
     />
   )
 }
@@ -222,47 +221,6 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
         zoomSpeed={1.5}
         minDistance={5}
         maxDistance={100}
-        makeDefault
-      />
-    </>
-  )
-}
-
-  return (
-    <>
-      <color attach="background" args={['#050505']} />
-      <ambientLight intensity={0.4} />
-      <pointLight position={[20, 20, 20]} intensity={1.5} color="#ffffff" />
-      <pointLight position={[-20, -20, -20]} intensity={0.8} color="#3b82f6" />
-      <spotLight position={[0, 20, 0]} angle={0.3} penumbra={1} intensity={1} castShadow />
-
-      {/* Render edges */}
-      {data.links.map((link, index) => {
-        const start = positions.get(link.source)
-        const end = positions.get(link.target)
-        if (start && end) return <Edge key={index} start={start} end={end} />
-        return null
-      })}
-
-      {/* Render nodes */}
-      {data.nodes.map((node) => {
-        const pos = positions.get(node.id)
-        if (pos) return (
-          <Node
-            key={node.id}
-            node={node}
-            position={pos}
-            onClick={() => onNodeClick?.(node)}
-          />
-        )
-        return null
-      })}
-
-      <OrbitControls 
-        enableDamping 
-        dampingFactor={0.05} 
-        rotateSpeed={0.5} 
-        zoomSpeed={1.2}
         makeDefault
       />
     </>
