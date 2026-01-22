@@ -19,15 +19,31 @@ export interface GraphData {
 }
 
 const LANGUAGE_COLORS: Record<string, string> = {
-  javascript: '#f1e05a',
-  typescript: '#2b7489',
-  python: '#3572A5',
-  java: '#b07219',
-  go: '#00ADD8',
-  rust: '#dea584',
-  ruby: '#701516',
-  php: '#4F5D95',
-  default: '#808080',
+  javascript: '#f7df1e', // Bright Yellow
+  typescript: '#3178c6', // Clear Blue
+  python: '#3776ab',     // Python Blue
+  java: '#eb2027',       // Red
+  go: '#00add8',         // Cyan
+  rust: '#f04000',       // Orange
+  ruby: '#cc342d',       // Ruby Red
+  php: '#777bb4',        // Purple
+  css: '#1572b6',
+  html: '#e34f26',
+  default: '#a2e435',    // Lime (our brand color)
+}
+
+function getNodeColor(type: string): string {
+  const colors: Record<string, string> = {
+    root: '#a2e435',      // Lime
+    module: '#3b82f6',    // Bright Blue
+    package: '#f59e0b',   // Amber
+    file: '#8b5cf6',      // Purple
+    external: '#ec4899',  // Pink
+    npm: '#cb3837',       // npm Red
+    pip: '#3776ab',       // pip Blue
+    default: '#6366f1',   // Indigo
+  }
+  return colors[type] || colors[type.toLowerCase()] || LANGUAGE_COLORS[type.toLowerCase()] || colors.default
 }
 
 export function useGraphData(dependencies: any): GraphData {
@@ -38,17 +54,26 @@ export function useGraphData(dependencies: any): GraphData {
 
     const nodes: GraphNode[] = []
     const links: GraphLink[] = []
-    const nodeMap = new Map<string, boolean>()
-
+    
     // Check for new format { nodes: [], edges: [] }
     if (dependencies.graph.nodes && Array.isArray(dependencies.graph.nodes)) {
+      // Calculate in-degree (how many things depend on this node)
+      const inDegree: Record<string, number> = {};
+      if (Array.isArray(dependencies.graph.edges)) {
+        dependencies.graph.edges.forEach((e: any) => {
+          inDegree[e.target] = (inDegree[e.target] || 0) + 1;
+        });
+      }
+
       dependencies.graph.nodes.forEach((n: any) => {
         const group = n.type || 'default';
+        const degree = inDegree[n.id] || 0;
         nodes.push({
           id: n.id,
           name: n.label || n.id,
           group: group,
-          size: n.size || 10,
+          // Scale size based on connectivity + base size
+          size: (n.size || 10) + (degree * 2), 
           color: getNodeColor(group),
         });
       });
@@ -59,6 +84,8 @@ export function useGraphData(dependencies: any): GraphData {
 
       return { nodes, links };
     }
+
+    const nodeMap = new Map<string, boolean>()
 
     // Process legacy dependency graph (adjacency list)
     Object.entries(dependencies.graph || {}).forEach(([sourceFile, deps]: [string, any]) => {
@@ -103,19 +130,6 @@ export function useGraphData(dependencies: any): GraphData {
 
     return { nodes, links }
   }, [dependencies])
-}
-
-function getNodeColor(type: string): string {
-  const colors: Record<string, string> = {
-    root: '#a2e435',      // lime
-    module: '#3b82f6',    // blue
-    package: '#f59e0b',   // amber
-    file: '#8b5cf6',      // purple
-    external: '#6b7280',  // gray
-    default: '#10b981',   // green
-    ...LANGUAGE_COLORS,   // Include language colors as fallback
-  }
-  return colors[type] || colors[type.toLowerCase()] || colors.default
 }
 
 function getFileLanguage(filename: string): string {
