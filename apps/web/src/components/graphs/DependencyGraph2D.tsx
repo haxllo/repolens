@@ -1,42 +1,42 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import * as d3 from 'd3-force'
 
-interface Node {
+interface Node extends d3.SimulationNodeDatum {
   id: string
   label: string
   type?: string
-  x?: number
-  y?: number
-  vx?: number
-  vy?: number
 }
 
-interface Edge {
+interface Edge extends d3.SimulationLinkDatum<Node> {
   source: string
   target: string
 }
 
 interface DependencyGraph2DProps {
-  nodes: Node[]
-  edges: Edge[]
+  nodes: { id: string; label: string; type?: string }[]
+  edges: { source: string; target: string }[]
   onNodeClick?: (nodeId: string) => void
 }
 
 export function DependencyGraph2D({
-  nodes,
-  edges,
+  nodes: initialNodes,
+  edges: initialEdges,
   onNodeClick,
 }: DependencyGraph2DProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const [positionedNodes, setPositionedNodes] = useState<Node[]>([])
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [draggedNode, setDraggedNode] = useState<string | null>(null)
+  const [draggedNode, setDraggedNode] = useState<Node | null>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
+
+  // Simulation state
+  const [nodes, setNodes] = useState<Node[]>([])
+  const [links, setLinks] = useState<Edge[]>([])
 
   // Handle resizing
   useEffect(() => {
@@ -58,6 +58,29 @@ export function DependencyGraph2D({
     return () => observer.disconnect()
   }, [])
 
+  // Initialize simulation
+  useEffect(() => {
+    if (initialNodes.length === 0 || dimensions.width === 0) return
+
+    const nodesData: Node[] = initialNodes.map(n => ({ ...n }))
+    const linksData: Edge[] = initialEdges.map(e => ({ ...e }))
+
+    const simulation = d3.forceSimulation<Node>(nodesData)
+      .force('link', d3.forceLink<Node, Edge>(linksData).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
+      .force('collision', d3.forceCollide().radius(40))
+
+    simulation.on('tick', () => {
+      setNodes([...nodesData])
+      setLinks([...linksData])
+    })
+
+    return () => {
+      simulation.stop()
+    }
+  }, [initialNodes, initialEdges, dimensions])
+
   // Color mapping for node types
   const getNodeColor = (type?: string) => {
     const colors: Record<string, string> = {
@@ -71,97 +94,19 @@ export function DependencyGraph2D({
     return colors[type || 'default'] || colors.default
   }
 
-  // Initialize node positions using force-directed layout
-  useEffect(() => {
-    if (nodes.length === 0 || dimensions.width === 0) return
-
-    // Initialize positions in a circle
-    const centerX = dimensions.width / 2
-    const centerY = dimensions.height / 2
-    const radius = Math.min(dimensions.width, dimensions.height) / 3
-
-    const initialNodes = nodes.map((node, i) => {
-      const angle = (2 * Math.PI * i) / nodes.length
-      return {
-        ...node,
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
-        vx: 0,
-        vy: 0,
-      }
-    })
-
-    // Run simple force simulation
-    const nodeMap = new Map(initialNodes.map(n => [n.id, n]))
-    const iterations = 100
-
-    for (let iter = 0; iter < iterations; iter++) {
-      // Repulsion between nodes
-      for (let i = 0; i < initialNodes.length; i++) {
-        for (let j = i + 1; j < initialNodes.length; j++) {
-          const n1 = initialNodes[i]
-          const n2 = initialNodes[j]
-          const dx = n2.x! - n1.x!
-          const dy = n2.y! - n1.y!
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          const force = 5000 / (dist * dist)
-          const fx = (dx / dist) * force
-          const fy = (dy / dist) * force
-          n1.vx! -= fx
-          n1.vy! -= fy
-          n2.vx! += fx
-          n2.vy! += fy
-        }
-      }
-
-      // Attraction along edges
-      for (const edge of edges) {
-        const source = nodeMap.get(edge.source)
-        const target = nodeMap.get(edge.target)
-        if (!source || !target) continue
-        
-        const dx = target.x! - source.x!
-        const dy = target.y! - source.y!
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const force = dist * 0.01
-        const fx = (dx / dist) * force
-        const fy = (dy / dist) * force
-        source.vx! += fx
-        source.vy! += fy
-        target.vx! -= fx
-        target.vy! -= fy
-      }
-
-      // Center gravity
-      for (const node of initialNodes) {
-        const dx = centerX - node.x!
-        const dy = centerY - node.y!
-        node.vx! += dx * 0.001
-        node.vy! += dy * 0.001
-      }
-
-      // Apply velocities with damping
-      for (const node of initialNodes) {
-        node.x! += node.vx! * 0.1
-        node.y! += node.vy! * 0.1
-        node.vx! *= 0.9
-        node.vy! *= 0.9
-        // Keep in bounds
-        node.x = Math.max(50, Math.min(dimensions.width - 50, node.x!))
-        node.y = Math.max(50, Math.min(dimensions.height - 50, node.y!))
-      }
-    }
-
-    setPositionedNodes(initialNodes)
-  }, [nodes, edges, dimensions])
-
   // Draw the graph
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || positionedNodes.length === 0 || dimensions.width === 0) return
+    if (!canvas || nodes.length === 0 || dimensions.width === 0) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
+    // Setup High DPI
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = dimensions.width * dpr
+    canvas.height = dimensions.height * dpr
+    ctx.scale(dpr, dpr)
 
     // Clear canvas
     ctx.clearRect(0, 0, dimensions.width, dimensions.height)
@@ -170,25 +115,24 @@ export function DependencyGraph2D({
     ctx.scale(scale, scale)
 
     // Draw edges
-    const nodeMap = new Map(positionedNodes.map(n => [n.id, n]))
-    ctx.strokeStyle = '#404040'
-    ctx.lineWidth = 1 / scale
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+    ctx.lineWidth = 1.5 / scale
 
-    for (const edge of edges) {
-      const source = nodeMap.get(edge.source)
-      const target = nodeMap.get(edge.target)
-      if (!source || !target) continue
+    for (const edge of links) {
+      const source = edge.source as unknown as Node
+      const target = edge.target as unknown as Node
+      if (!source.x || !source.y || !target.x || !target.y) continue
 
       ctx.beginPath()
-      ctx.moveTo(source.x!, source.y!)
-      ctx.lineTo(target.x!, target.y!)
+      ctx.moveTo(source.x, source.y)
+      ctx.lineTo(target.x, target.y)
       ctx.stroke()
 
-      // Draw arrow
-      const angle = Math.atan2(target.y! - source.y!, target.x! - source.x!)
-      const arrowSize = 8 / scale
-      const arrowX = target.x! - (20 / scale) * Math.cos(angle)
-      const arrowY = target.y! - (20 / scale) * Math.sin(angle)
+      // Draw arrow head
+      const angle = Math.atan2(target.y - source.y, target.x - source.x)
+      const arrowSize = 6 / scale
+      const arrowX = target.x - (15 / scale) * Math.cos(angle)
+      const arrowY = target.y - (15 / scale) * Math.sin(angle)
       
       ctx.beginPath()
       ctx.moveTo(arrowX, arrowY)
@@ -201,56 +145,78 @@ export function DependencyGraph2D({
         arrowY - arrowSize * Math.sin(angle + Math.PI / 6)
       )
       ctx.closePath()
-      ctx.fillStyle = '#404040'
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'
       ctx.fill()
     }
 
     // Draw nodes
-    for (const node of positionedNodes) {
+    for (const node of nodes) {
+      if (!node.x || !node.y) continue
       const isHovered = hoveredNode === node.id
-      const radius = (isHovered ? 18 : 15) / scale
+      const radius = (isHovered ? 12 : 8) / scale
+
+      // Shadow for nodes
+      ctx.shadowBlur = 10 / scale
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
 
       // Node circle
       ctx.beginPath()
-      ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI)
+      ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI)
       ctx.fillStyle = getNodeColor(node.type)
       ctx.fill()
       
       if (isHovered) {
-        ctx.strokeStyle = '#a2e435'
+        ctx.strokeStyle = '#fff'
         ctx.lineWidth = 2 / scale
         ctx.stroke()
       }
+      
+      ctx.shadowBlur = 0 // Reset shadow
 
-      // Label
-      if (scale > 0.5 || isHovered) {
-        ctx.fillStyle = '#ffffff'
-        ctx.font = `${isHovered ? 'bold ' : ''}${11 / scale}px sans-serif`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
+      // Improved Label Rendering
+      if (scale > 0.4 || isHovered) {
+        const label = node.label.length > 20 && !isHovered ? node.label.slice(0, 17) + '...' : node.label
+        ctx.font = `${isHovered ? 'bold ' : ''}${Math.max(10, 12 / scale)}px sans-serif`
+        const textWidth = ctx.measureText(label).width
+        const padding = 4 / scale
         
-        const label = node.label.length > 15 && !isHovered ? node.label.slice(0, 12) + '...' : node.label
-        ctx.fillText(label, node.x!, node.y! + radius + (12 / scale))
+        // Label background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+        ctx.roundRect(
+          node.x - textWidth / 2 - padding,
+          node.y + radius + (4 / scale),
+          textWidth + padding * 2,
+          (16 / scale),
+          4 / scale
+        )
+        ctx.fill()
+
+        // Label text
+        ctx.fillStyle = isHovered ? '#fff' : 'rgba(255, 255, 255, 0.8)'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(label, node.x, node.y + radius + (6 / scale))
       }
     }
 
     ctx.restore()
-  }, [positionedNodes, edges, hoveredNode, dimensions, offset, scale])
+  }, [nodes, links, hoveredNode, dimensions, offset, scale])
 
-  // Handle mouse events
+  // Helper: Find node at position
   const getNodeAtPosition = useCallback((x: number, y: number) => {
     const adjustedX = (x - offset.x) / scale
     const adjustedY = (y - offset.y) / scale
     
-    for (const node of positionedNodes) {
-      const dx = node.x! - adjustedX
-      const dy = node.y! - adjustedY
-      if (Math.sqrt(dx * dx + dy * dy) < (20 / scale)) {
-        return node.id
+    for (const node of nodes) {
+      if (!node.x || !node.y) continue
+      const dx = node.x - adjustedX
+      const dy = node.y - adjustedY
+      if (Math.sqrt(dx * dx + dy * dy) < (15 / scale)) {
+        return node
       }
     }
     return null
-  }, [positionedNodes, offset, scale])
+  }, [nodes, offset, scale])
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect()
@@ -260,26 +226,17 @@ export function DependencyGraph2D({
     const y = e.clientY - rect.top
     
     if (isDragging && draggedNode) {
-      // Dragging logic (panning or node dragging)
-      // For now, implementing Panning when dragging background, Node dragging when dragging node
-      
-      // Check if we started dragging on a node or background
-      // Actually simple implementation: if draggedNode is set, we drag that node.
-      // But draggedNode is string ID.
-      
-      setPositionedNodes(prev => prev.map(n => 
-        n.id === draggedNode 
-          ? { ...n, x: (x - offset.x) / scale, y: (y - offset.y) / scale }
-          : n
-      ))
-    } else if (isDragging && !draggedNode) {
-        // Panning
-        setOffset(prev => ({
-            x: prev.x + e.movementX,
-            y: prev.y + e.movementY
-        }))
+      draggedNode.fx = (x - offset.x) / scale
+      draggedNode.fy = (y - offset.y) / scale
+      setNodes([...nodes])
+    } else if (isDragging) {
+      setOffset(prev => ({
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY
+      }))
     } else {
-      setHoveredNode(getNodeAtPosition(x, y))
+      const node = getNodeAtPosition(x, y)
+      setHoveredNode(node?.id || null)
     }
   }
 
@@ -289,15 +246,21 @@ export function DependencyGraph2D({
     
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
-    const nodeId = getNodeAtPosition(x, y)
+    const node = getNodeAtPosition(x, y)
     
     setIsDragging(true)
-    setDraggedNode(nodeId) // null if background
+    if (node) {
+      setDraggedNode(node)
+      node.fx = node.x
+      node.fy = node.y
+    }
   }
 
   const handleMouseUp = () => {
-    if (isDragging && draggedNode && onNodeClick) {
-      onNodeClick(draggedNode)
+    if (draggedNode) {
+      if (onNodeClick && !isDragging) onNodeClick(draggedNode.id)
+      draggedNode.fx = null
+      draggedNode.fy = null
     }
     setIsDragging(false)
     setDraggedNode(null)
@@ -309,70 +272,32 @@ export function DependencyGraph2D({
     setScale(prev => Math.max(0.1, Math.min(5, prev * delta)))
   }
 
-  if (nodes.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-white/50 bg-white/[0.02] rounded-xl">
-        No dependency data available
-      </div>
-    )
-  }
-
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden rounded-xl border border-white/10">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-[#050505]">
       <canvas
         ref={canvasRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        className="bg-[#0a0a0a] block"
+        style={{ width: dimensions.width, height: dimensions.height }}
+        className="block cursor-grab active:cursor-grabbing"
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => {
-          setHoveredNode(null)
-          setIsDragging(false)
-        }}
+        onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        style={{ cursor: isDragging ? 'grabbing' : hoveredNode ? 'pointer' : 'grab' }}
       />
       
-      {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-sm border border-white/10 px-3 py-2 text-xs space-y-1 rounded-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-lime-400 rounded-full" />
-          <span className="text-white/60">Root</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded-full" />
-          <span className="text-white/60">Module</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-amber-500 rounded-full" />
-          <span className="text-white/60">Package</span>
+      {/* Legend & Controls UI remains similar but polished */}
+      <div className="absolute bottom-4 left-4 flex gap-4 items-center">
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 rounded-xl flex gap-4 text-[10px]">
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-lime-400" /> <span className="text-white/60">Root</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" /> <span className="text-white/60">Module</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> <span className="text-white/60">Package</span></div>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          onClick={() => setScale(s => Math.min(5, s * 1.2))}
-          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
-          title="Zoom In"
-        >
-          +
-        </button>
-        <button
-          onClick={() => setScale(s => Math.max(0.1, s / 1.2))}
-          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
-          title="Zoom Out"
-        >
-          -
-        </button>
-        <button
-          onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
-          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white text-xs rounded-lg transition-colors"
-        >
-          Reset
-        </button>
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button onClick={() => setScale(s => Math.min(5, s * 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-lg hover:bg-white/10">+</button>
+        <button onClick={() => setScale(s => Math.max(0.1, s / 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-lg hover:bg-white/10">-</button>
+        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-2 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] rounded-lg hover:bg-white/10">Reset</button>
       </div>
     </div>
   )

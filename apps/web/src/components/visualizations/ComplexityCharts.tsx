@@ -25,7 +25,7 @@ interface ComplexityChartsProps {
   riskScores?: Record<string, number>;
 }
 
-const COLORS = ["#a2e435", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+const COLORS = ["#a2e435", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsProps) {
   const complexityDist = React.useMemo(() => {
@@ -92,9 +92,14 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="glass p-2 text-sm">
-          <p className="font-medium">{label || payload[0].name}</p>
-          <p className="text-white/60">{payload[0].value}</p>
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-2xl">
+          <p className="font-bold text-white text-xs mb-1">{label || payload[0].name}</p>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].fill || payload[0].color }} />
+            <p className="text-white/80 text-xs font-medium">
+              {payload[0].value} {payload[0].name === 'count' ? 'Files' : ''}
+            </p>
+          </div>
         </div>
       );
     }
@@ -102,27 +107,27 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <div>
-          <h4 className="font-semibold">Complexity Distribution</h4>
-          <p className="text-sm text-white/50">Files by complexity range</p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+        <div className="mb-6">
+          <h4 className="text-lg font-bold text-white">Complexity Distribution</h4>
+          <p className="text-xs text-white/40">Number of files by cyclomatic complexity</p>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={complexityDist}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-            <XAxis dataKey="name" stroke="#ffffff40" fontSize={12} />
-            <YAxis stroke="#ffffff40" fontSize={12} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="count" fill="#a2e435" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} stroke="#ffffff30" fontSize={10} />
+            <YAxis axisLine={false} tickLine={false} stroke="#ffffff30" fontSize={10} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+            <Bar dataKey="count" fill="#a2e435" radius={[4, 4, 0, 0]} barSize={40} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <h4 className="font-semibold">Language Breakdown</h4>
-          <p className="text-sm text-white/50">Lines of code by language</p>
+      <div className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+        <div className="mb-6">
+          <h4 className="text-lg font-bold text-white">Language Breakdown</h4>
+          <p className="text-xs text-white/40">Distribution of code by language (LOC)</p>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
@@ -130,67 +135,76 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
               data={languageData}
               cx="50%"
               cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              innerRadius={60}
               outerRadius={90}
-              fill="#8884d8"
+              paddingAngle={5}
               dataKey="value"
-              stroke="#0a0a0a"
-              strokeWidth={2}
-              style={{ fontSize: '12px', fill: '#fff' }}
+              stroke="none"
             >
-              {languageData.map((_, index) => (
+              {languageData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
+        <div className="flex flex-wrap justify-center gap-4 mt-2">
+          {languageData.map((entry, index) => (
+            <div key={entry.name} className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+              <span className="text-[10px] text-white/60 font-medium uppercase tracking-wider">{entry.name}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {Object.keys(riskScores).length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold">Risk Distribution</h4>
-            <p className="text-sm text-white/50">Files by risk level</p>
+        <div className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+          <div className="mb-6">
+            <h4 className="text-lg font-bold text-white">Risk Profile</h4>
+            <p className="text-xs text-white/40">File distribution across risk levels</p>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={riskDist}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-              <XAxis dataKey="name" stroke="#ffffff40" fontSize={12} />
-              <YAxis stroke="#ffffff40" fontSize={12} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#f59e0b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} stroke="#ffffff30" fontSize={10} />
+              <YAxis axisLine={false} tickLine={false} stroke="#ffffff30" fontSize={10} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
+                {riskDist.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={index === 3 ? '#ef4444' : index === 2 ? '#f59e0b' : index === 1 ? '#eab308' : '#a2e435'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
       {topComplexFiles.length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold">Most Complex Files</h4>
-            <p className="text-sm text-white/50">Top 10 by complexity</p>
+        <div className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
+          <div className="mb-6">
+            <h4 className="text-lg font-bold text-white">Complexity Hotspots</h4>
+            <p className="text-xs text-white/40">Top 10 most complex files</p>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={topComplexFiles} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-              <XAxis type="number" stroke="#ffffff40" fontSize={12} />
-              <YAxis dataKey="name" type="category" width={100} stroke="#ffffff40" fontSize={11} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" horizontal={false} />
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} stroke="#ffffff50" fontSize={9} />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="glass p-2 text-sm">
-                        <p className="font-medium">{payload[0].payload.path}</p>
-                        <p className="text-white/60">Complexity: {payload[0].value}</p>
+                      <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-2xl">
+                        <p className="font-bold text-white text-[10px] mb-1">{payload[0].payload.path}</p>
+                        <p className="text-red-400 text-xs font-bold">Complexity: {payload[0].value}</p>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              <Bar dataKey="complexity" fill="#ef4444" />
+              <Bar dataKey="complexity" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={15} />
             </BarChart>
           </ResponsiveContainer>
         </div>

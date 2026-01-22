@@ -123,4 +123,28 @@ class RiskScorer:
         else:
             scores['level'] = 'high'
             
+        # Per-file risk scores for heatmap
+        scores['file_risks'] = []
+        for file in ast_data.get('files', []):
+            path = file.get('path', '')
+            lines = file.get('lines', 0)
+            functions = file.get('functions', 0)
+            
+            # Simple per-file risk algorithm (0-10)
+            # Factor 1: Lines of code (threshold 500)
+            line_score = min(5, (lines / 500) * 5)
+            # Factor 2: Complexity/Functions (threshold 20)
+            func_score = min(5, (functions / 20) * 5)
+            
+            file_risk = round(line_score + func_score, 2)
+            
+            scores['file_risks'].append({
+                'file_path': path,
+                'risk_score': file_risk,
+                'metrics': {
+                    'lines': lines,
+                    'functions': functions
+                }
+            })
+
         return scores

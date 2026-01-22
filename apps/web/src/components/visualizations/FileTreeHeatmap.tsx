@@ -80,12 +80,29 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="glass p-3 text-sm">
-          <p className="font-semibold text-white">{data.name}</p>
-          <p className="text-white/50">{data.path}</p>
-          <p className="mt-1">Size: {data.size} LOC</p>
-          {data.complexity && <p>Complexity: {data.complexity}</p>}
-          {data.risk && <p>Risk Score: {data.risk.toFixed(1)}/10</p>}
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-xl shadow-2xl">
+          <p className="font-bold text-white text-base mb-1">{data.name}</p>
+          <p className="text-white/40 text-[10px] font-mono break-all mb-3">{data.path}</p>
+          <div className="space-y-1.5">
+            <div className="flex justify-between gap-8 text-xs">
+              <span className="text-white/60">Lines of Code</span>
+              <span className="text-white font-medium">{data.size}</span>
+            </div>
+            {data.complexity && (
+              <div className="flex justify-between gap-8 text-xs">
+                <span className="text-white/60">Complexity</span>
+                <span className="text-white font-medium">{data.complexity}</span>
+              </div>
+            )}
+            {data.risk !== undefined && (
+              <div className="flex justify-between gap-8 text-xs pt-1.5 border-t border-white/5">
+                <span className="text-white/60">Risk Score</span>
+                <span className={`font-bold ${data.risk > 7 ? 'text-red-400' : data.risk > 4 ? 'text-orange-400' : 'text-lime-400'}`}>
+                  {data.risk.toFixed(1)}/10
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
@@ -94,48 +111,48 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
 
   if (files.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-white/50">No file data available</p>
+      <div className="flex items-center justify-center h-[500px] text-white/50 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
+        No file data available for heatmap
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-1">File Tree Heatmap</h3>
-        <p className="text-sm text-white/50">
-          File size by lines of code, colored by risk score
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-white">File Distribution</h3>
+          <p className="text-sm text-white/40">
+            Size represents Lines of Code, Color represents Risk Level
+          </p>
+        </div>
+        <div className="flex gap-3 bg-black/40 p-2 rounded-xl border border-white/5">
+          {[
+            { label: 'Low', color: 'bg-lime-400' },
+            { label: 'Med', color: 'bg-yellow-500' },
+            { label: 'High', color: 'bg-orange-500' },
+            { label: 'Crit', color: 'bg-red-500' },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5 px-2">
+              <div className={`w-2 h-2 rounded-full ${item.color}`} />
+              <span className="text-[10px] font-medium text-white/60 uppercase tracking-wider">{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <ResponsiveContainer width="100%" height={500}>
-        <Treemap
-          data={treeData}
-          dataKey="size"
-          stroke="#1a1a1a"
-          fill="#8884d8"
-          content={<CustomTreemapContent getColor={getColor} />}
-        >
-          <Tooltip content={<CustomTooltip />} />
-        </Treemap>
-      </ResponsiveContainer>
-      <div className="flex gap-6 justify-center text-sm text-white/60">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-lime-400"></div>
-          <span>Low</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500"></div>
-          <span>Medium</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-orange-500"></div>
-          <span>High</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500"></div>
-          <span>Critical</span>
-        </div>
+
+      <div className="bg-[#050505] rounded-2xl border border-white/10 overflow-hidden">
+        <ResponsiveContainer width="100%" height={500}>
+          <Treemap
+            data={treeData}
+            dataKey="size"
+            stroke="#050505"
+            fill="#8884d8"
+            content={<CustomTreemapContent getColor={getColor} />}
+          >
+            <Tooltip content={<CustomTooltip />} />
+          </Treemap>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -144,7 +161,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
 const CustomTreemapContent = ({ getColor, ...props }: any) => {
   const { x, y, width, height, name, risk } = props;
 
-  if (width < 10 || height < 10) return null;
+  if (width < 15 || height < 15) return null;
 
   return (
     <g>
@@ -155,20 +172,22 @@ const CustomTreemapContent = ({ getColor, ...props }: any) => {
         height={height}
         style={{
           fill: getColor(risk),
-          stroke: "#0a0a0a",
-          strokeWidth: 2,
+          stroke: "#050505",
+          strokeWidth: 1,
+          opacity: 0.9
         }}
       />
-      {width > 50 && height > 30 && (
+      {width > 60 && height > 25 && (
         <text
           x={x + width / 2}
           y={y + height / 2}
           textAnchor="middle"
           fill="#000"
-          fontSize={11}
-          fontWeight="600"
+          fontSize={Math.min(width / 8, 11)}
+          fontWeight="700"
+          style={{ pointerEvents: 'none' }}
         >
-          {name}
+          {name.length > width / 8 ? name.slice(0, Math.floor(width / 10)) + '...' : name}
         </text>
       )}
     </g>
