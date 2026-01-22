@@ -20,8 +20,8 @@ COPY tsconfig.json ./
 
 # Copy workspace packages
 COPY apps/api/package*.json ./apps/api/
-COPY packages/database/package*.json ./packages/database/ 2>/dev/null || true
-COPY packages/shared/package*.json ./packages/shared/ 2>/dev/null || true
+COPY packages/database/package*.json ./packages/database/
+COPY packages/shared/package*.json ./packages/shared/
 
 # Install Node dependencies
 RUN npm install
@@ -36,7 +36,7 @@ RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 RUN npx turbo build --filter=@repolens/api
 
 # Install Python dependencies for worker
-RUN pip3 install --no-cache-dir -r apps/worker/requirements.txt
+RUN pip3 install --no-cache-dir -r apps/worker/requirements.txt --break-system-packages
 
 # Create sandbox directory
 RUN mkdir -p /tmp/repolens-sandboxes
