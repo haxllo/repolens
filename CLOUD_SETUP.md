@@ -197,7 +197,7 @@ After deployment:
    - **Branch**: `main`
    - **Root Directory**: Leave blank
    - **Runtime**: Node
-   - **Build Command**: `npm install && npm run build --filter=@repolens/api`
+   - **Build Command**: `npm install && npx turbo build --filter=@repolens/api`
    - **Start Command**: `node apps/api/dist/main.js`
    - **Plan**: Free
 

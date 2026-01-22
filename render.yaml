@@ -1,5 +1,5 @@
-# Render API Service Configuration
-# Copy this to render.yaml or use Render Dashboard
+# Render Blueprint Configuration
+# Use this for deploying via Render Dashboard or render.yaml
 
 services:
   # NestJS API Gateway
@@ -8,8 +8,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd apps/api && npm install && npm run build
-    startCommand: cd apps/api && node dist/main.js
+    buildCommand: npm install && npx turbo build --filter=@repolens/api
+    startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -33,10 +33,12 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: cd apps/worker && pip install -r requirements.txt
-    startCommand: cd apps/worker && python worker.py
+    buildCommand: pip install -r apps/worker/requirements.txt
+    startCommand: python apps/worker/worker.py
     envVars:
       - key: REDIS_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false

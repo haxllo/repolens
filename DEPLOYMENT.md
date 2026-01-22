@@ -11,12 +11,30 @@ This guide covers deploying RepoLens to production using:
 
 ---
 
+## Project Structure
+
+```
+repolens/
+├── apps/
+│   ├── web/          # Next.js 14 frontend (Vercel)
+│   ├── api/          # NestJS API gateway (Railway)
+│   └── worker/       # Python analysis worker (Railway)
+├── packages/
+│   ├── database/     # Prisma schema & migrations
+│   └── shared/       # TypeScript types
+├── docker-compose.yml
+└── turbo.json
+```
+
+---
+
 ## Pre-Deployment Checklist
 
 - [ ] GitHub OAuth app configured for production URLs
 - [ ] Gemini API key obtained
 - [ ] Domain name configured (optional)
 - [ ] Production secrets generated
+- [ ] `.gitignore` verified (no secrets committed)
 
 ---
 
@@ -59,12 +77,17 @@ cd apps/web
 vercel
 \`\`\`
 
-### Via GitHub Integration
+### Via GitHub Integration (Recommended)
 
 1. Go to https://vercel.com
 2. Import GitHub repository
-3. Set root directory: \`apps/web\`
-4. Configure environment variables:
+3. Configure:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `apps/web`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
+
+4. Environment variables:
 
 \`\`\`env
 NEXT_PUBLIC_API_URL=https://your-api.railway.app
@@ -72,6 +95,7 @@ NEXTAUTH_URL=https://your-domain.vercel.app
 NEXTAUTH_SECRET=<generated-secret>
 GITHUB_CLIENT_ID=<your-github-client-id>
 GITHUB_CLIENT_SECRET=<your-github-client-secret>
+DATABASE_URL=<neon-connection-string>
 \`\`\`
 
 5. Deploy
@@ -80,6 +104,18 @@ GITHUB_CLIENT_SECRET=<your-github-client-secret>
 
 - Go to GitHub OAuth app settings
 - Update callback URL: \`https://your-domain.vercel.app/api/auth/callback/github\`
+
+### Monorepo Note
+
+If Vercel doesn't detect the monorepo automatically, add to root:
+
+\`\`\`json
+// vercel.json
+{
+  "buildCommand": "npm run build --workspace=@repolens/web",
+  "installCommand": "npm install"
+}
+\`\`\`
 
 ---
 
@@ -311,6 +347,46 @@ npm update
 1. Go to service settings
 2. Add custom domain
 3. Configure DNS
+
+---
+
+## Quick Deploy Commands
+
+### Local Build & Test
+
+\`\`\`bash
+# Install dependencies
+npm install
+
+# Build all packages
+npm run build
+
+# Run locally
+npm run dev
+\`\`\`
+
+### Clean Build (if cache issues)
+
+\`\`\`bash
+# Clean and rebuild frontend
+npm run clean --workspace=@repolens/web
+npm run build --workspace=@repolens/web
+
+# Or clean everything
+npm run clean
+npm install
+npm run build
+\`\`\`
+
+### Push to GitHub
+
+\`\`\`bash
+# Initial push
+git remote add origin https://github.com/YOUR_USERNAME/repolens.git
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+\`\`\`
 
 ---
 
