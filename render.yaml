@@ -1,0 +1,46 @@
+# Render API Service Configuration
+# Copy this to render.yaml or use Render Dashboard
+
+services:
+  # NestJS API Gateway
+  - type: web
+    name: repolens-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd apps/api && npm install && npm run build
+    startCommand: cd apps/api && node dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: PORT
+        value: "3001"
+      - key: NODE_ENV
+        value: "production"
+      - key: FRONTEND_URL
+        sync: false
+
+  # Python Analysis Worker
+  - type: worker
+    name: repolens-worker
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: cd apps/worker && pip install -r requirements.txt
+    startCommand: cd apps/worker && python worker.py
+    envVars:
+      - key: REDIS_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: SANDBOX_DIR
+        value: "/tmp/repolens-sandboxes"

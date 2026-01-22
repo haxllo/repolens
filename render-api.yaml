@@ -1,0 +1,19 @@
+version: 2
+services:
+  - type: web
+    name: repolens-api
+    env: node
+    buildCommand: npm install && npm run build --filter=@repolens/api
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+      - key: REDIS_HOST
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+      - key: PORT
+        value: "3001"
+      - key: NODE_ENV
+        value: "production"
+      - key: FRONTEND_URL
