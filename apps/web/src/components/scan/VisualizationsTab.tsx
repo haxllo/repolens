@@ -14,11 +14,14 @@ interface VisualizationsTabProps {
 export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const [activeView, setActiveView] = useState<'heatmap' | 'charts' | 'graph'>('heatmap');
   const [use3D, setUse3D] = useState(true);
-  const files = scanData?.files || [];
+  
+  // Access files from AST data
+  const files = scanData?.ast?.files || [];
   const riskScores: Record<string, number> = {};
   
-  if (scanData?.risk_scores?.file_risks) {
-    scanData.risk_scores.file_risks.forEach((risk: any) => {
+  // Access risk scores (camelCase from backend)
+  if (scanData?.riskScores?.file_risks) {
+    scanData.riskScores.file_risks.forEach((risk: any) => {
       riskScores[risk.file_path] = risk.risk_score;
     });
   }
@@ -87,8 +90,6 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
                 <DependencyGraph2D
                   nodes={graphData.nodes}
                   edges={graphData.links}
-                  width={800}
-                  height={500}
                 />
               )}
             </div>

@@ -26,6 +26,7 @@ import {
   ShieldAlert,
   Eye
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ScanData {
   scanId: string
@@ -60,7 +61,9 @@ export default function ScanDetailPage() {
       setScan(data)
       setError('')
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch scan data')
+      const msg = err.message || 'Failed to fetch scan data'
+      setError(msg)
+      toast.error('Error loading scan', { description: msg })
     } finally {
       setLoading(false)
     }
@@ -122,10 +125,21 @@ export default function ScanDetailPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64 bg-white/10" />
+        <Skeleton className="h-5 w-32 bg-white/10" /> {/* Back link */}
         <div className="glass rounded-2xl p-6">
-          <Skeleton className="h-6 w-48 bg-white/10 mb-4" />
-          <Skeleton className="h-32 w-full bg-white/5" />
+          <div className="flex justify-between items-start mb-4">
+            <div className="space-y-2 w-1/2">
+              <Skeleton className="h-8 w-3/4 bg-white/10" /> {/* Title */}
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-24 bg-white/5" /> {/* Branch */}
+                <Skeleton className="h-4 w-20 bg-white/5" /> {/* ID */}
+              </div>
+            </div>
+            <Skeleton className="h-10 w-32 bg-white/5 rounded-xl" /> {/* Status Badge */}
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-6 h-64">
+           <Skeleton className="h-full w-full bg-white/5" />
         </div>
       </div>
     )

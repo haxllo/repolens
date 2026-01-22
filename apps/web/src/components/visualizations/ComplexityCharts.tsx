@@ -19,7 +19,8 @@ interface ComplexityChartsProps {
     path: string;
     complexity?: number;
     language: string;
-    lines_of_code: number;
+    lines?: number;
+    lines_of_code?: number;
   }>;
   riskScores?: Record<string, number>;
 }
@@ -48,7 +49,8 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
   const languageData = React.useMemo(() => {
     const langs: Record<string, number> = {};
     files.forEach((file) => {
-      langs[file.language] = (langs[file.language] || 0) + file.lines_of_code;
+      const size = file.lines || file.lines_of_code || 0;
+      langs[file.language] = (langs[file.language] || 0) + size;
     });
 
     return Object.entries(langs)

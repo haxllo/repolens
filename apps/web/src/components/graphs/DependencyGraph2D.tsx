@@ -21,24 +21,42 @@ interface DependencyGraph2DProps {
   nodes: Node[]
   edges: Edge[]
   onNodeClick?: (nodeId: string) => void
-  width?: number
-  height?: number
 }
 
 export function DependencyGraph2D({
   nodes,
   edges,
   onNodeClick,
-  width = 800,
-  height = 600,
 }: DependencyGraph2DProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [positionedNodes, setPositionedNodes] = useState<Node[]>([])
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
+
+  // Handle resizing
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
+        })
+      }
+    }
+
+    updateDimensions()
+    const observer = new ResizeObserver(updateDimensions)
+    observer.observe(containerRef.current)
+
+    return () => observer.disconnect()
+  }, [])
 
   // Color mapping for node types
   const getNodeColor = (type?: string) => {
@@ -55,12 +73,12 @@ export function DependencyGraph2D({
 
   // Initialize node positions using force-directed layout
   useEffect(() => {
-    if (nodes.length === 0) return
+    if (nodes.length === 0 || dimensions.width === 0) return
 
     // Initialize positions in a circle
-    const centerX = width / 2
-    const centerY = height / 2
-    const radius = Math.min(width, height) / 3
+    const centerX = dimensions.width / 2
+    const centerY = dimensions.height / 2
+    const radius = Math.min(dimensions.width, dimensions.height) / 3
 
     const initialNodes = nodes.map((node, i) => {
       const angle = (2 * Math.PI * i) / nodes.length
@@ -129,24 +147,24 @@ export function DependencyGraph2D({
         node.vx! *= 0.9
         node.vy! *= 0.9
         // Keep in bounds
-        node.x = Math.max(50, Math.min(width - 50, node.x!))
-        node.y = Math.max(50, Math.min(height - 50, node.y!))
+        node.x = Math.max(50, Math.min(dimensions.width - 50, node.x!))
+        node.y = Math.max(50, Math.min(dimensions.height - 50, node.y!))
       }
     }
 
     setPositionedNodes(initialNodes)
-  }, [nodes, edges, width, height])
+  }, [nodes, edges, dimensions])
 
   // Draw the graph
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || positionedNodes.length === 0) return
+    if (!canvas || positionedNodes.length === 0 || dimensions.width === 0) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     // Clear canvas
-    ctx.clearRect(0, 0, width, height)
+    ctx.clearRect(0, 0, dimensions.width, dimensions.height)
     ctx.save()
     ctx.translate(offset.x, offset.y)
     ctx.scale(scale, scale)
@@ -154,7 +172,7 @@ export function DependencyGraph2D({
     // Draw edges
     const nodeMap = new Map(positionedNodes.map(n => [n.id, n]))
     ctx.strokeStyle = '#404040'
-    ctx.lineWidth = 1
+    ctx.lineWidth = 1 / scale
 
     for (const edge of edges) {
       const source = nodeMap.get(edge.source)
@@ -168,9 +186,9 @@ export function DependencyGraph2D({
 
       // Draw arrow
       const angle = Math.atan2(target.y! - source.y!, target.x! - source.x!)
-      const arrowSize = 8
-      const arrowX = target.x! - 20 * Math.cos(angle)
-      const arrowY = target.y! - 20 * Math.sin(angle)
+      const arrowSize = 8 / scale
+      const arrowX = target.x! - (20 / scale) * Math.cos(angle)
+      const arrowY = target.y! - (20 / scale) * Math.sin(angle)
       
       ctx.beginPath()
       ctx.moveTo(arrowX, arrowY)
@@ -190,7 +208,7 @@ export function DependencyGraph2D({
     // Draw nodes
     for (const node of positionedNodes) {
       const isHovered = hoveredNode === node.id
-      const radius = isHovered ? 18 : 15
+      const radius = (isHovered ? 18 : 15) / scale
 
       // Node circle
       ctx.beginPath()
@@ -200,22 +218,24 @@ export function DependencyGraph2D({
       
       if (isHovered) {
         ctx.strokeStyle = '#a2e435'
-        ctx.lineWidth = 2
+        ctx.lineWidth = 2 / scale
         ctx.stroke()
       }
 
       // Label
-      ctx.fillStyle = '#ffffff'
-      ctx.font = isHovered ? 'bold 12px sans-serif' : '11px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      
-      const label = node.label.length > 15 ? node.label.slice(0, 12) + '...' : node.label
-      ctx.fillText(label, node.x!, node.y! + radius + 12)
+      if (scale > 0.5 || isHovered) {
+        ctx.fillStyle = '#ffffff'
+        ctx.font = `${isHovered ? 'bold ' : ''}${11 / scale}px sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        
+        const label = node.label.length > 15 && !isHovered ? node.label.slice(0, 12) + '...' : node.label
+        ctx.fillText(label, node.x!, node.y! + radius + (12 / scale))
+      }
     }
 
     ctx.restore()
-  }, [positionedNodes, edges, hoveredNode, width, height, offset, scale])
+  }, [positionedNodes, edges, hoveredNode, dimensions, offset, scale])
 
   // Handle mouse events
   const getNodeAtPosition = useCallback((x: number, y: number) => {
@@ -225,7 +245,7 @@ export function DependencyGraph2D({
     for (const node of positionedNodes) {
       const dx = node.x! - adjustedX
       const dy = node.y! - adjustedY
-      if (Math.sqrt(dx * dx + dy * dy) < 20) {
+      if (Math.sqrt(dx * dx + dy * dy) < (20 / scale)) {
         return node.id
       }
     }
@@ -240,11 +260,24 @@ export function DependencyGraph2D({
     const y = e.clientY - rect.top
     
     if (isDragging && draggedNode) {
+      // Dragging logic (panning or node dragging)
+      // For now, implementing Panning when dragging background, Node dragging when dragging node
+      
+      // Check if we started dragging on a node or background
+      // Actually simple implementation: if draggedNode is set, we drag that node.
+      // But draggedNode is string ID.
+      
       setPositionedNodes(prev => prev.map(n => 
         n.id === draggedNode 
           ? { ...n, x: (x - offset.x) / scale, y: (y - offset.y) / scale }
           : n
       ))
+    } else if (isDragging && !draggedNode) {
+        // Panning
+        setOffset(prev => ({
+            x: prev.x + e.movementX,
+            y: prev.y + e.movementY
+        }))
     } else {
       setHoveredNode(getNodeAtPosition(x, y))
     }
@@ -258,10 +291,8 @@ export function DependencyGraph2D({
     const y = e.clientY - rect.top
     const nodeId = getNodeAtPosition(x, y)
     
-    if (nodeId) {
-      setIsDragging(true)
-      setDraggedNode(nodeId)
-    }
+    setIsDragging(true)
+    setDraggedNode(nodeId) // null if background
   }
 
   const handleMouseUp = () => {
@@ -275,24 +306,24 @@ export function DependencyGraph2D({
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? 0.9 : 1.1
-    setScale(prev => Math.max(0.5, Math.min(2, prev * delta)))
+    setScale(prev => Math.max(0.1, Math.min(5, prev * delta)))
   }
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-white/50">
+      <div className="flex items-center justify-center h-full text-white/50 bg-white/[0.02] rounded-xl">
         No dependency data available
       </div>
     )
   }
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden rounded-xl border border-white/10">
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
-        className="bg-[#0a0a0a] cursor-grab"
+        width={dimensions.width}
+        height={dimensions.height}
+        className="bg-[#0a0a0a] block"
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
@@ -303,36 +334,42 @@ export function DependencyGraph2D({
         onWheel={handleWheel}
         style={{ cursor: isDragging ? 'grabbing' : hoveredNode ? 'pointer' : 'grab' }}
       />
-      <div className="absolute bottom-4 right-4 bg-white/[0.05] px-3 py-2 text-xs space-y-1">
+      
+      {/* Legend */}
+      <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-sm border border-white/10 px-3 py-2 text-xs space-y-1 rounded-lg">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-lime-400" />
+          <div className="w-3 h-3 bg-lime-400 rounded-full" />
           <span className="text-white/60">Root</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500" />
+          <div className="w-3 h-3 bg-blue-500 rounded-full" />
           <span className="text-white/60">Module</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-amber-500" />
+          <div className="w-3 h-3 bg-amber-500 rounded-full" />
           <span className="text-white/60">Package</span>
         </div>
       </div>
+
+      {/* Controls */}
       <div className="absolute top-4 right-4 flex gap-2">
         <button
-          onClick={() => setScale(s => Math.min(2, s * 1.2))}
-          className="p-2 bg-white/[0.05] hover:bg-white/[0.1] text-white"
+          onClick={() => setScale(s => Math.min(5, s * 1.2))}
+          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
+          title="Zoom In"
         >
           +
         </button>
         <button
-          onClick={() => setScale(s => Math.max(0.5, s / 1.2))}
-          className="p-2 bg-white/[0.05] hover:bg-white/[0.1] text-white"
+          onClick={() => setScale(s => Math.max(0.1, s / 1.2))}
+          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
+          title="Zoom Out"
         >
           -
         </button>
         <button
           onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
-          className="p-2 bg-white/[0.05] hover:bg-white/[0.1] text-white text-xs"
+          className="p-2 bg-black/80 backdrop-blur-sm border border-white/10 hover:bg-white/10 text-white text-xs rounded-lg transition-colors"
         >
           Reset
         </button>

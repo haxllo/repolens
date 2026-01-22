@@ -5,20 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Github, Loader2, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { Github, Loader2, ArrowRight } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function ScanForm({ userId }: { userId?: string }) {
   const router = useRouter()
   const [repoUrl, setRepoUrl] = useState('')
   const [branch, setBranch] = useState('main')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setSuccess(false)
     setLoading(true)
 
     try {
@@ -41,7 +38,10 @@ export default function ScanForm({ userId }: { userId?: string }) {
       }
 
       const data = await response.json()
-      setSuccess(true)
+      toast.success('Scan created successfully!', {
+        description: 'Redirecting to analysis dashboard...',
+      })
+      
       setRepoUrl('')
       setBranch('main')
 
@@ -50,7 +50,9 @@ export default function ScanForm({ userId }: { userId?: string }) {
         router.push(`/dashboard/${data.scanId}`)
       }, 1000)
     } catch (err: any) {
-      setError(err.message || 'Failed to create scan')
+      toast.error('Failed to create scan', {
+        description: err.message || 'Please check the URL and try again.',
+      })
     } finally {
       setLoading(false)
     }
@@ -95,20 +97,6 @@ export default function ScanForm({ userId }: { userId?: string }) {
             className="bg-white/[0.03] border-white/10 focus:border-lime-400/50 focus:ring-lime-400/20 placeholder:text-white/30"
           />
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-lime-400/10 border border-lime-400/20 text-lime-400 text-sm">
-            <CheckCircle className="h-4 w-4 flex-shrink-0" />
-            Scan created successfully! Redirecting...
-          </div>
-        )}
 
         <Button 
           type="submit" 

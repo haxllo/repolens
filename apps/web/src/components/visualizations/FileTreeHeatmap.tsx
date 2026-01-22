@@ -16,7 +16,8 @@ interface FileTreeHeatmapProps {
   files: Array<{
     path: string;
     language: string;
-    lines_of_code: number;
+    lines?: number;
+    lines_of_code?: number;
     complexity?: number;
   }>;
   riskScores?: Record<string, number>;
@@ -29,6 +30,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
     files.forEach((file) => {
       const parts = file.path.split("/");
       let current = root;
+      const size = file.lines || file.lines_of_code || 0;
 
       parts.forEach((part, index) => {
         if (!current.children) current.children = [];
@@ -40,14 +42,14 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
           child = {
             name: part,
             path: parts.slice(0, index + 1).join("/"),
-            size: isFile ? file.lines_of_code : 0,
+            size: isFile ? size : 0,
             complexity: isFile ? file.complexity : undefined,
             risk: isFile ? riskScores[file.path] : undefined,
             children: isFile ? undefined : [],
           };
           current.children.push(child);
         } else if (index === parts.length - 1) {
-          child.size += file.lines_of_code;
+          child.size += size;
         }
 
         current = child;

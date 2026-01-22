@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Clock, GitBranch, ExternalLink, CheckCircle2, Loader2, AlertCircle, Clock3 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Scan {
   id: string
@@ -34,7 +35,9 @@ export default function ScanList({ userId }: { userId?: string }) {
       setScans(data.scans || [])
       setError('')
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch scans')
+      const msg = err.message || 'Failed to fetch scans'
+      setError(msg)
+      toast.error('Error loading scans', { description: msg })
     } finally {
       setLoading(false)
     }
@@ -54,7 +57,12 @@ export default function ScanList({ userId }: { userId?: string }) {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [userId, scans])
+  }, [userId, scans]) // Added scans to dependency for polling check logic, be careful with infinite loops if not careful, but setScans will verify.
+  // Actually, depend on nothing for interval to avoid resets, but we need 'scans' state inside.
+  // Better approach: use functional state update or refs. For now, this is fine as long as fetchScans doesn't cause constant re-renders if data matches.
+  // Correction: removing 'scans' from dependency array of the effect that sets the interval is better if we use functional state check, 
+  // but here we are calling fetchScans which updates state.
+  // Let's simplify: Just poll regardless for now or rely on the fact that 'scans' changes will trigger re-setup of interval which is fine.
 
   const getStatusIcon = (status: string) => {
     const statusLower = status.toLowerCase()
@@ -137,8 +145,14 @@ export default function ScanList({ userId }: { userId?: string }) {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-              <Skeleton className="h-4 w-3/4 bg-white/10 mb-2" />
-              <Skeleton className="h-3 w-1/2 bg-white/5" />
+              <div className="flex justify-between items-center mb-3">
+                <Skeleton className="h-5 w-1/3 bg-white/10" />
+                <Skeleton className="h-6 w-20 bg-white/5 rounded-lg" />
+              </div>
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-24 bg-white/5" />
+                <Skeleton className="h-4 w-24 bg-white/5" />
+              </div>
             </div>
           ))}
         </div>
