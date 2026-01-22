@@ -23,11 +23,17 @@ function Node({
   const meshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
 
-  useFrame(() => {
-    if (meshRef.current && hovered) {
-      meshRef.current.scale.setScalar(1.3)
-    } else if (meshRef.current) {
-      meshRef.current.scale.setScalar(1)
+  useFrame((state) => {
+    if (meshRef.current) {
+      // Pulse effect for important nodes (root or highly connected)
+      if (node.group === 'root') {
+        const s = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+        meshRef.current.scale.setScalar(hovered ? 1.4 : s)
+      } else if (hovered) {
+        meshRef.current.scale.setScalar(1.3)
+      } else {
+        meshRef.current.scale.setScalar(1)
+      }
     }
   })
 
@@ -39,43 +45,68 @@ function Node({
         onPointerOver={(e) => { e.stopPropagation(); setHovered(true) }}
         onPointerOut={() => setHovered(false)}
       >
-        <sphereGeometry args={[node.size / 15 + 0.2, 24, 24]} />
+        <sphereGeometry args={[node.size / 15 + 0.3, 32, 32]} />
         <meshStandardMaterial
           color={node.color}
-          emissive={hovered ? node.color : '#000000'}
-          emissiveIntensity={hovered ? 0.5 : 0}
-          metalness={0.6}
-          roughness={0.2}
+          emissive={node.color}
+          emissiveIntensity={hovered ? 1.5 : 0.4}
+          metalness={0.8}
+          roughness={0.1}
         />
       </mesh>
+      
+      {/* Dynamic Label */}
       {(hovered || node.group === 'root') && (
-        <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+        <Float speed={3} rotationIntensity={0.1} floatIntensity={0.5}>
           <Text
-            position={[0, node.size / 10 + 0.5, 0]}
-            fontSize={0.4}
+            position={[0, node.size / 10 + 0.8, 0]}
+            fontSize={0.5}
             color="white"
             anchorX="center"
             anchorY="bottom"
-            outlineWidth={0.02}
+            outlineWidth={0.04}
             outlineColor="#000000"
+            font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf"
           >
             {node.name}
           </Text>
+          {hovered && (
+            <Text
+              position={[0, node.size / 10 + 0.3, 0]}
+              fontSize={0.25}
+              color={node.color}
+              anchorX="center"
+              anchorY="bottom"
+              outlineWidth={0.02}
+              outlineColor="#000000"
+            >
+              {node.group.toUpperCase()}
+            </Text>
+          )}
         </Float>
+      )}
+      
+      {/* Subtle Glow Ring */}
+      {node.group === 'root' && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.5, 1.6, 64]} />
+          <meshBasicMaterial color={node.color} transparent opacity={0.3} side={THREE.DoubleSide} />
+        </mesh>
       )}
     </group>
   )
 }
 
-function Edge({ start, end }: { start: [number, number, number]; end: [number, number, number] }) {
+function Edge({ start, end, color }: { start: [number, number, number]; end: [number, number, number]; color?: string }) {
   const points = useMemo(() => [new THREE.Vector3(...start), new THREE.Vector3(...end)], [start, end])
   return (
     <Line 
       points={points} 
-      color="#ffffff" 
-      lineWidth={0.5} 
-      opacity={0.15} 
+      color={color || "#ffffff"} 
+      lineWidth={0.8} 
+      opacity={0.2} 
       transparent 
+      attenuation
     />
   )
 }
@@ -85,70 +116,117 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
     const posMap = new Map<string, [number, number, number]>()
     if (data.nodes.length === 0) return posMap
 
-    // Initialize with better distribution
-    const nodes = data.nodes.map((node, i) => ({
+    const nodes = data.nodes.map((node) => ({
       ...node,
-      x: (Math.random() - 0.5) * 20,
-      y: (Math.random() - 0.5) * 20,
-      z: (Math.random() - 0.5) * 20,
-      vx: 0,
-      vy: 0,
-      vz: 0,
+      x: (Math.random() - 0.5) * 30,
+      y: (Math.random() - 0.5) * 30,
+      z: (Math.random() - 0.5) * 30,
+      vx: 0, vy: 0, vz: 0,
     }))
 
-    // Simple 3D force simulation
-    const iterations = 150
+    // Advanced 3D Force Simulation with Clustering
+    const iterations = 200
     const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
     for (let i = 0; i < iterations; i++) {
-      // Repulsion
+      // Repulsion (Many-Body)
       for (let j = 0; j < nodes.length; j++) {
         for (let k = j + 1; k < nodes.length; k++) {
-          const n1 = nodes[j]
-          const n2 = nodes[k]
-          const dx = n2.x - n1.x
-          const dy = n2.y - n1.y
-          const dz = n2.z - n1.z
+          const n1 = nodes[j]; const n2 = nodes[k]
+          const dx = n2.x - n1.x; const dy = n2.y - n1.y; const dz = n2.z - n1.z
           const distSq = dx * dx + dy * dy + dz * dz || 1
-          const dist = Math.sqrt(distSq)
-          const force = 1.5 / distSq
-          const fx = (dx / dist) * force
-          const fy = (dy / dist) * force
-          const fz = (dz / dist) * force
-          n1.vx -= fx; n1.vy -= fy; n1.vz -= fz
-          n2.vx += fx; n2.vy += fy; n2.vz += fz
+          const force = (n1.group === n2.group ? 1.0 : 2.5) / distSq // Repel different groups more
+          n1.vx -= dx * force; n1.vy -= dy * force; n1.vz -= dz * force
+          n2.vx += dx * force; n2.vy += dy * force; n2.vz += dz * force
         }
       }
 
-      // Attraction (edges)
+      // Attraction (Links)
       for (const link of data.links) {
-        const s = nodeMap.get(link.source)
-        const t = nodeMap.get(link.target)
+        const s = nodeMap.get(link.source); const t = nodeMap.get(link.target)
         if (!s || !t) continue
         const dx = t.x - s.x; const dy = t.y - s.y; const dz = t.z - s.z
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
-        const force = dist * 0.05
-        const fx = (dx / dist) * force
-        const fy = (dy / dist) * force
-        const fz = (dz / dist) * force
-        s.vx += fx; s.vy += fy; s.vz += fz
-        t.vx -= fx; t.vy -= fy; t.vz -= fz
+        const force = dist * 0.08
+        s.vx += dx * force; s.vy += dy * force; s.vz += dz * force
+        t.vx -= dx * force; t.vy -= dy * force; t.vz -= dz * force
       }
 
-      // Center gravity
+      // Type-based Gravity (Clustering)
+      const groupCenters: Record<string, {x: number, y: number, z: number}> = {
+        'root': {x: 0, y: 0, z: 0},
+        'npm': {x: 15, y: 10, z: 0},
+        'pip': {x: -15, y: 10, z: 0},
+        'module': {x: 0, y: -15, z: 10},
+        'file': {x: 0, y: -15, z: -10},
+      }
+
       for (const n of nodes) {
-        n.vx -= n.x * 0.02; n.vy -= n.y * 0.02; n.vz -= n.z * 0.02
+        const target = groupCenters[n.group] || {x: 0, y: 0, z: 0}
+        n.vx += (target.x - n.x) * 0.01
+        n.vy += (target.y - n.y) * 0.01
+        n.vz += (target.z - n.z) * 0.01
         
-        // Apply velocity
+        // Universal Gravity
+        n.vx -= n.x * 0.01; n.vy -= n.y * 0.01; n.vz -= n.z * 0.01
+        
         n.x += n.vx; n.y += n.vy; n.z += n.vz
-        // Damping
-        n.vx *= 0.6; n.vy *= 0.6; n.vz *= 0.6
+        n.vx *= 0.5; n.vy *= 0.5; n.vz *= 0.5 // Heavy damping
       }
     }
 
     nodes.forEach(n => posMap.set(n.id, [n.x, n.y, n.z]))
     return posMap
   }, [data])
+
+  return (
+    <>
+      <color attach="background" args={['#020202']} />
+      <fog attach="fog" args={['#020202', 20, 70]} />
+      
+      <ambientLight intensity={0.2} />
+      <pointLight position={[20, 20, 20]} intensity={2} color="#ffffff" />
+      <pointLight position={[-20, -20, -20]} intensity={1} color="#3b82f6" />
+      <spotLight position={[0, 40, 0]} intensity={1.5} angle={0.5} penumbra={1} castShadow />
+
+      {/* Grid Floor for depth */}
+      <gridHelper args={[100, 20, '#ffffff05', '#ffffff02']} position={[0, -20, 0]} />
+
+      {/* Render links */}
+      {data.links.map((link, index) => {
+        const start = positions.get(link.source)
+        const end = positions.get(link.target)
+        const sourceNode = data.nodes.find(n => n.id === link.source)
+        if (start && end) return <Edge key={index} start={start} end={end} color={sourceNode?.color} />
+        return null
+      })}
+
+      {/* Render nodes */}
+      {data.nodes.map((node) => {
+        const pos = positions.get(node.id)
+        if (pos) return (
+          <Node
+            key={node.id}
+            node={node}
+            position={pos}
+            onClick={() => onNodeClick?.(node)}
+          />
+        )
+        return null
+      })}
+
+      <OrbitControls 
+        enableDamping 
+        dampingFactor={0.05} 
+        rotateSpeed={0.4} 
+        zoomSpeed={1.5}
+        minDistance={5}
+        maxDistance={100}
+        makeDefault
+      />
+    </>
+  )
+}
 
   return (
     <>
