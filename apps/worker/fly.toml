@@ -1,0 +1,28 @@
+# Fly.io Configuration for RepoLens Worker
+# Documentation: https://fly.io/docs/reference/configuration/
+
+app = "repolens-worker"
+primary_region = "sin"  # Singapore (change to your preferred region: sjc, iad, lhr, etc.)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SANDBOX_DIR = "/tmp/repolens-sandboxes"
+
+# No HTTP service - this is a background worker
+# We don't expose any ports
+
+[processes]
+  worker = "python worker.py"
+
+# Free tier: shared-cpu-1x with 256MB RAM
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Health checks (optional for workers)
+# [[services]]
+#   internal_port = 8080
+#   protocol = "tcp"
