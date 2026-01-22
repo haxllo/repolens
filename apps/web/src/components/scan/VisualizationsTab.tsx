@@ -29,7 +29,12 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const dependencies = scanData?.dependencies || {};
   
   const graphData = {
-    nodes: dependencies.graph?.nodes || [],
+    nodes: (dependencies.graph?.nodes || []).map((n: any) => ({
+      ...n,
+      name: n.label || n.id, // Map label to name for 3D graph
+      size: n.size || 10,    // Ensure size exists
+      color: n.type === 'root' ? '#a2e435' : '#3b82f6' // Basic coloring
+    })),
     links: (dependencies.graph?.edges || []).map((e: any) => ({
       source: e.source,
       target: e.target,

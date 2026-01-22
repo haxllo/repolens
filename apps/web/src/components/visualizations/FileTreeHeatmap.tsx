@@ -56,7 +56,16 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
       });
     });
 
-    return root.children || [];
+    const traverse = (nodes: FileNode[]): FileNode[] => {
+      return nodes
+        .filter((n) => n.size > 0)
+        .map((n) => ({
+          ...n,
+          children: n.children ? traverse(n.children) : undefined,
+        }));
+    };
+
+    return traverse(root.children || []);
   }, [files, riskScores]);
 
   const getColor = (risk?: number) => {
@@ -103,7 +112,6 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
         <Treemap
           data={treeData}
           dataKey="size"
-          aspectRatio={4 / 3}
           stroke="#1a1a1a"
           fill="#8884d8"
           content={<CustomTreemapContent getColor={getColor} />}

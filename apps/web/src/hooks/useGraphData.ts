@@ -40,7 +40,27 @@ export function useGraphData(dependencies: any): GraphData {
     const links: GraphLink[] = []
     const nodeMap = new Map<string, boolean>()
 
-    // Process dependency graph
+    // Check for new format { nodes: [], edges: [] }
+    if (dependencies.graph.nodes && Array.isArray(dependencies.graph.nodes)) {
+      dependencies.graph.nodes.forEach((n: any) => {
+        const group = n.type || 'default';
+        nodes.push({
+          id: n.id,
+          name: n.label || n.id,
+          group: group,
+          size: n.size || 10,
+          color: getNodeColor(group),
+        });
+      });
+
+      if (dependencies.graph.edges && Array.isArray(dependencies.graph.edges)) {
+        links.push(...dependencies.graph.edges);
+      }
+
+      return { nodes, links };
+    }
+
+    // Process legacy dependency graph (adjacency list)
     Object.entries(dependencies.graph || {}).forEach(([sourceFile, deps]: [string, any]) => {
       // Add source node if not exists
       if (!nodeMap.has(sourceFile)) {
@@ -83,6 +103,19 @@ export function useGraphData(dependencies: any): GraphData {
 
     return { nodes, links }
   }, [dependencies])
+}
+
+function getNodeColor(type: string): string {
+  const colors: Record<string, string> = {
+    root: '#a2e435',      // lime
+    module: '#3b82f6',    // blue
+    package: '#f59e0b',   // amber
+    file: '#8b5cf6',      // purple
+    external: '#6b7280',  // gray
+    default: '#10b981',   // green
+    ...LANGUAGE_COLORS,   // Include language colors as fallback
+  }
+  return colors[type] || colors[type.toLowerCase()] || colors.default
 }
 
 function getFileLanguage(filename: string): string {
