@@ -10,9 +10,10 @@ FROM base AS installer
 WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY --from=builder /app/out/full/ .
+RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
 RUN npm run build --filter=@repolens/api
 
 FROM base AS runner
