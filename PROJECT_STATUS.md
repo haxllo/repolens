@@ -31,12 +31,14 @@ RepoLens is now live in production! The MVP is fully functional, deployed on Ver
 - [x] Three.js + React Three Fiber integration
 - [x] React Query for data fetching
 - [x] Zustand for state management
-- [x] GitHub OAuth with NextAuth.js
+- [x] GitHub OAuth with Better Auth
 - [x] Landing page
 - [x] Sign-in page
 - [x] API client utility
+- [x] 3D Graph Visualization
+- [x] Dashboard Layout
 
-**Location:** `apps/web/`
+**Location:** \`apps/web/\`
 
 ### 3. API Gateway (NestJS)
 - [x] NestJS application setup
@@ -78,9 +80,7 @@ RepoLens is now live in production! The MVP is fully functional, deployed on Ver
 
 ### 7. Documentation
 - [x] README with quick start
-- [x] GETTING_STARTED.md (step-by-step guide)
 - [x] DEVELOPMENT.md (detailed dev docs)
-- [x] DEPLOYMENT.md (production deployment)
 - [x] ARCHITECTURE.md (system design)
 - [x] DECISIONS.md (architectural decisions)
 

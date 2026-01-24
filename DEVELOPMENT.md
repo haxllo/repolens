@@ -54,21 +54,16 @@ cp .env.example.worker apps/worker/.env
 
 **Configure these values:**
 
-1. **GitHub OAuth** (apps/web/.env.local):
-   - Go to https://github.com/settings/developers
-   - Create new OAuth App
-   - Set callback URL: \`http://localhost:3000/api/auth/callback/github\`
-   - Copy Client ID and Secret
+2. **Better Auth** (apps/web/.env.local):
+   - \`BETTER_AUTH_SECRET\`: Generate with \`openssl rand -base64 32\`
+   - \`BETTER_AUTH_URL\`: Set to \`http://localhost:3000\`
+   - **GitHub OAuth**:
+     - Go to https://github.com/settings/developers
+     - Create new OAuth App
+     - Set callback URL: \`http://localhost:3000/api/auth/callback/github\`
+     - Copy Client ID and Secret
 
-2. **Gemini API** (apps/worker/.env):
-   - Go to https://makersuite.google.com/app/apikey
-   - Create API key
-   - Add to \`GEMINI_API_KEY\`
-
-3. **NextAuth Secret** (apps/web/.env.local):
-   \`\`\`bash
-   openssl rand -base64 32
-   \`\`\`
+3. **Gemini API** (apps/worker/.env):
 
 ### 3. Start Infrastructure (Docker)
 
@@ -213,8 +208,8 @@ npm install -D <package>
 | Variable | Description | Example |
 |----------|-------------|---------|
 | \`NEXT_PUBLIC_API_URL\` | API Gateway URL | \`http://localhost:3001\` |
-| \`NEXTAUTH_URL\` | NextAuth base URL | \`http://localhost:3000\` |
-| \`NEXTAUTH_SECRET\` | NextAuth secret key | Generated with openssl |
+| \`BETTER_AUTH_URL\` | Better Auth base URL | \`http://localhost:3000\` |
+| \`BETTER_AUTH_SECRET\` | Better Auth secret key | Generated with openssl |
 | \`GITHUB_CLIENT_ID\` | GitHub OAuth Client ID | From GitHub settings |
 | \`GITHUB_CLIENT_SECRET\` | GitHub OAuth Secret | From GitHub settings |
 

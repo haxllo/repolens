@@ -62,6 +62,7 @@ RepoLens is a **modular, layered SaaS system** designed for scalability, explain
 - Backend: Node.js / Python
 - AI: OpenAI API (explanation-only)
 - Frontend: Next.js
+- Auth: Better Auth (with Prisma adapter)
 - Job Queue: BullMQ / RabbitMQ
 - Storage: Temp sandbox, optional DB for history
 

@@ -28,7 +28,7 @@ RepoLens is an AI-powered developer tool that produces:
 - Next.js 14 (App Router)
 - React, TypeScript
 - TailwindCSS
-- NextAuth.js
+- Better Auth
 
 ### Backend (Combined API + Worker)
 - NestJS (API Gateway)
@@ -148,8 +148,8 @@ repolens/
 
 **Phase 1 (MVP - ✅ COMPLETE):**
 - ✅ Monorepo setup (Turborepo)
-- ✅ Next.js frontend with NextAuth
-- ✅ NestJS API + BullMQ queue
+- ✅ Next.js frontend with Better Auth
+- ✅ NestJS API + Bearer Token validation
 - ✅ Python worker with tree-sitter
 - ✅ GitHub OAuth
 - ✅ Prisma database schema
