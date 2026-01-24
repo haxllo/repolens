@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'motion/react'
 import { 
   Search, 
   LayoutDashboard, 
@@ -36,28 +36,10 @@ export default function HomePage() {
   const [searchValue, setSearchValue] = useState('')
   
   const { scrollY } = useScroll()
-  
-  // Refined Docking Search Bar
-  // Move from hero position (480px) to navbar center
-  const searchY = useTransform(scrollY, [0, 400], [0, -468]) 
-  
-  // Width transitions: Hero Width (700px) -> Navbar Width (500px)
-  // Using pixel values for both ensures stable centering
-  const searchWidth = useTransform(scrollY, [0, 400], ['700px', '500px'])
-  
-  // Height transitions: Tall hero input (64px) -> Sleek navbar input (44px)
-  const searchHeight = useTransform(scrollY, [0, 400], ['64px', '44px'])
-  const searchPadding = useTransform(scrollY, [0, 400], ['1rem', '0.5rem'])
-  
-  // Smooth physics
-  const springConfig = { stiffness: 150, damping: 25, mass: 0.8 }
-  const smoothSearchY = useSpring(searchY, springConfig)
-  const smoothSearchWidth = useSpring(searchWidth, springConfig)
-  const smoothSearchHeight = useSpring(searchHeight, springConfig)
 
   // Hero Content Fade
-  const heroOpacity = useTransform(scrollY, [0, 200], [1, 0])
-  const heroY = useTransform(scrollY, [0, 200], [0, 50])
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
+  const heroY = useTransform(scrollY, [0, 300], [0, 50])
 
   return (
     <div className="min-h-screen bg-[#050508] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans">
@@ -82,33 +64,6 @@ export default function HomePage() {
             Code Wiki
           </span>
         </div>
-        
-        {/* The Docking Search Bar Container - Fixed Centering */}
-        <motion.div 
-          style={{ y: smoothSearchY }}
-          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto flex items-center justify-center z-50"
-        >
-          {/* Inner Input - Width Animates Here */}
-          <motion.div 
-            style={{ 
-              width: smoothSearchWidth,
-              height: smoothSearchHeight,
-            }}
-            className="relative group"
-          >
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
-              <Search className="h-4 w-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
-            </div>
-            <motion.input 
-              type="text"
-              placeholder="Find open source repos..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              style={{ padding: searchPadding }}
-              className="w-full h-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/80 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
-            />
-          </motion.div>
-        </motion.div>
 
         {/* Right Nav */}
         <div className="flex items-center gap-4 pointer-events-auto relative z-10">
@@ -133,7 +88,7 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative pt-48 pb-32 px-6 flex flex-col items-center text-center z-10 min-h-[90vh]">
-        <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative z-10">
+        <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative z-10 flex flex-col items-center w-full">
           
           {/* Badge */}
           <motion.div 
@@ -170,6 +125,25 @@ export default function HomePage() {
             Instantly transform any repository into a structured, queryable knowledge base. 
             Stop searching through files. Start asking questions.
           </motion.p>
+
+          {/* Static Search Bar */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="w-full max-w-2xl relative group"
+          >
+            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
+              <Search className="h-5 w-5 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
+            </div>
+            <input 
+              type="text"
+              placeholder="Find open source repos..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="w-full h-16 bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full pl-14 pr-6 text-base transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
+            />
+          </motion.div>
         </motion.div>
 
         {/* Feature Grid (Floating Cards) */}
