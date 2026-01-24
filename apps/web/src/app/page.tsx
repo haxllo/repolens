@@ -38,9 +38,10 @@ export default function HomePage() {
   const { scrollY } = useScroll()
   
   // Refined Docking Search Bar
-  const searchY = useTransform(scrollY, [0, 300], [0, -260])
-  const searchScale = useTransform(scrollY, [0, 300], [1, 0.6])
-  const searchWidth = useTransform(scrollY, [0, 300], ['100%', '35%'])
+  // Adjusted start/end scroll range to account for new lower starting position
+  const searchY = useTransform(scrollY, [0, 400], [0, -420]) 
+  const searchScale = useTransform(scrollY, [0, 400], [1, 0.6])
+  const searchWidth = useTransform(scrollY, [0, 400], ['100%', '35%'])
   const searchBlur = useTransform(scrollY, [0, 100], [0, 12])
   
   // Smooth spring physics for the search bar
@@ -81,7 +82,7 @@ export default function HomePage() {
             scale: smoothSearchScale,
             width: smoothSearchWidth,
           }}
-          className="absolute left-1/2 -translate-x-1/2 top-[320px] pointer-events-auto w-full max-w-2xl px-4 md:px-0 origin-center z-50"
+          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto w-full max-w-2xl px-4 md:px-0 origin-center z-50"
         >
           <div className="relative group">
             <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
