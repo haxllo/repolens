@@ -163,7 +163,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
 const CustomTreemapContent = ({ getColor, ...props }: any) => {
   const { x, y, width, height, name, risk } = props;
 
-  if (width < 15 || height < 15) return null;
+  if (width < 15 || height < 15 || !name) return null;
 
   return (
     <g>
@@ -189,7 +189,7 @@ const CustomTreemapContent = ({ getColor, ...props }: any) => {
           fontWeight="700"
           style={{ pointerEvents: 'none' }}
         >
-          {name.length > width / 8 ? name.slice(0, Math.floor(width / 10)) + '...' : name}
+          {String(name).length > width / 8 ? String(name).slice(0, Math.floor(width / 10)) + '...' : name}
         </text>
       )}
     </g>

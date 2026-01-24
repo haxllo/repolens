@@ -118,13 +118,14 @@ function Edge({ start, end, color }: { start: [number, number, number]; end: [nu
 function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
   const positions = useMemo(() => {
     const posMap = new Map<string, [number, number, number]>()
-    if (data.nodes.length === 0) return posMap
+    if (!data.nodes || data.nodes.length === 0) return posMap
 
     // Initial stable distribution
     const nodes = data.nodes.map((node, i) => {
       // Use a more distributed initial state than purely random
-      const phi = Math.acos(-1 + (2 * i) / data.nodes.length)
-      const theta = Math.sqrt(data.nodes.length * Math.PI) * phi
+      const nCount = data.nodes.length
+      const phi = Math.acos(-1 + (2 * i) / Math.max(1, nCount - 1))
+      const theta = Math.sqrt(nCount * Math.PI) * phi
       const r = 15
       
       return {

@@ -15,6 +15,14 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const [activeView, setActiveView] = useState<'heatmap' | 'charts' | 'graph'>('heatmap');
   const [use3D, setUse3D] = useState(true);
   
+  if (!scanData) {
+    return (
+      <div className="flex items-center justify-center h-64 glass rounded-2xl">
+        <p className="text-white/50 text-sm italic">Waiting for analysis results...</p>
+      </div>
+    );
+  }
+
   // Access files from AST data
   const files = scanData?.ast?.files || [];
   const riskScores: Record<string, number> = {};

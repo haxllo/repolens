@@ -55,17 +55,21 @@ export function useGraphData(dependencies: any): GraphData {
     const nodes: GraphNode[] = []
     const links: GraphLink[] = []
     
-    // Check for new format { nodes: [], edges: [] }
-    if (dependencies.graph.nodes && Array.isArray(dependencies.graph.nodes)) {
+    // Check for new format { nodes: [], edges: [] } with defensive checks
+    const backendNodes = dependencies?.graph?.nodes;
+    if (Array.isArray(backendNodes)) {
       // Calculate in-degree (how many things depend on this node)
       const inDegree: Record<string, number> = {};
       if (Array.isArray(dependencies.graph.edges)) {
         dependencies.graph.edges.forEach((e: any) => {
-          inDegree[e.target] = (inDegree[e.target] || 0) + 1;
+          if (e && e.target) {
+            inDegree[e.target] = (inDegree[e.target] || 0) + 1;
+          }
         });
       }
 
-      dependencies.graph.nodes.forEach((n: any) => {
+      backendNodes.forEach((n: any) => {
+        if (!n) return;
         const group = n.type || 'default';
         const degree = inDegree[n.id] || 0;
         nodes.push({
@@ -78,8 +82,8 @@ export function useGraphData(dependencies: any): GraphData {
         });
       });
 
-      if (dependencies.graph.edges && Array.isArray(dependencies.graph.edges)) {
-        links.push(...dependencies.graph.edges);
+      if (Array.isArray(dependencies.graph.edges)) {
+        links.push(...dependencies.graph.edges.filter((e: any) => e && e.source && e.target));
       }
 
       return { nodes, links };
