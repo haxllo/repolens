@@ -3,13 +3,20 @@
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Github, ArrowRight } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function HeaderSignIn() {
   const handleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: 'github',
-      callbackURL: '/dashboard'
-    })
+    console.log('Initiating Header GitHub sign in...');
+    try {
+      await authClient.signIn.social({
+        provider: 'github',
+        callbackURL: '/dashboard'
+      })
+    } catch (error: any) {
+      console.error('Header Sign in error:', error);
+      toast.error('Failed to sign in: ' + (error.message || 'Unknown error'))
+    }
   }
 
   return (
@@ -25,10 +32,16 @@ export function HeaderSignIn() {
 
 export function HeroSignIn() {
   const handleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: 'github',
-      callbackURL: '/dashboard'
-    })
+    console.log('Initiating Hero GitHub sign in...');
+    try {
+      await authClient.signIn.social({
+        provider: 'github',
+        callbackURL: '/dashboard'
+      })
+    } catch (error: any) {
+      console.error('Hero Sign in error:', error);
+      toast.error('Failed to sign in: ' + (error.message || 'Unknown error'))
+    }
   }
 
   return (

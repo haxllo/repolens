@@ -2,7 +2,7 @@
 
 import { authClient } from '@/lib/auth-client'
 import { redirect, useSearchParams } from 'next/navigation'
-import { SignInButton } from '@/components/SignInButton'
+import { AuthCard } from '@/components/auth/AuthCard'
 import { Zap, AlertCircle } from 'lucide-react'
 import { useEffect, Suspense } from 'react'
 
@@ -38,16 +38,11 @@ function SignInContent() {
       <div className="relative z-10 max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
             <div className="w-12 h-12 rounded-xl bg-lime-400 flex items-center justify-center">
               <Zap className="h-7 w-7 text-black" />
             </div>
           </div>
-          
-          <h2 className="text-3xl font-bold mb-2">Sign in to RepoLens</h2>
-          <p className="text-white/50">
-            Analyze your GitHub repositories with AI-powered insights
-          </p>
         </div>
 
         {error && (
@@ -60,12 +55,14 @@ function SignInContent() {
           </div>
         )}
 
-        <div className="glass rounded-2xl p-8">
-          <SignInButton />
+        <div className="glass rounded-3xl border border-white/10 p-1">
+          <div className="bg-[#0a0a0a] rounded-[22px] p-8">
+            <AuthCard />
+          </div>
         </div>
 
-        <p className="text-center text-sm text-white/30">
-          By signing in, you agree to our Terms of Service and Privacy Policy
+        <p className="text-center text-[10px] text-white/20 uppercase tracking-widest">
+          Secured by Better Auth
         </p>
       </div>
     </div>
