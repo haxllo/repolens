@@ -60,7 +60,8 @@ cp .env.example.worker apps/worker/.env
    - **GitHub OAuth**:
      - Go to https://github.com/settings/developers
      - Create new OAuth App
-     - Set callback URL: \`http://localhost:3000/api/auth/callback/github\`
+     - **Local callback URL**: \`http://localhost:3000/api/auth/callback/github\`
+     - **Production callback URL**: \`https://repolens-web.vercel.app/api/auth/callback/github\`
      - Copy Client ID and Secret
 
 3. **Gemini API** (apps/worker/.env):
@@ -82,6 +83,13 @@ cd packages/database
 npx prisma generate
 npx prisma db push
 cd ../..
+\`\`\`
+
+#### Production Database Sync (Neon)
+When you make changes to \`schema.prisma\`, you must sync your production database:
+\`\`\`bash
+# From packages/database
+DATABASE_URL="your_production_neon_url" npx prisma db push
 \`\`\`
 
 ### 5. Start Development Servers
