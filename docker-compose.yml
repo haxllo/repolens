@@ -61,6 +61,7 @@ services:
       - SANDBOX_DIR=/tmp/repolens-sandboxes
     volumes:
       - /tmp/repolens-sandboxes:/tmp/repolens-sandboxes
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       redis:
         condition: service_healthy
