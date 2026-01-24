@@ -13,6 +13,8 @@ from .call_graph import build_call_graph
 from .readme_scorer import analyze_readme
 from .complexity import analyze_complexity
 from ..ai.explainer import AIExplainer
+from ..storage.r2_storage import R2Storage
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class AnalysisOrchestrator:
         self.dependency_analyzer = DependencyAnalyzer()
         self.risk_scorer = RiskScorer()
         self.ai_explainer = AIExplainer()
+        self.storage = R2Storage()
         
     async def analyze_repository(
         self, 
@@ -117,6 +120,22 @@ class AnalysisOrchestrator:
                 'complexity': complexity_metrics,
             })
             
+            # Step 12: Persist results to R2 Storage (New)
+            artifact_url = None
+            if self.storage.enabled:
+                logger.info('Step 12: Persisting results to R2 Storage')
+                storage_key = f"scans/{scan_id or 'manual'}/results.json"
+                storage_data = {
+                    'languages': languages,
+                    'ast': ast_data,
+                    'dependencies': dependencies,
+                    'riskScores': risk_scores,
+                    'explanations': explanations
+                }
+                success = await self.storage.upload_json(storage_key, json.dumps(storage_data))
+                if success:
+                    artifact_url = self.storage.get_public_url(storage_key)
+
             # Cleanup
             await self.repo_cloner.cleanup(repo_path)
             
@@ -137,6 +156,7 @@ class AnalysisOrchestrator:
                 'readmeAnalysis': readme_analysis,
                 'complexityMetrics': complexity_metrics,
                 'explanations': explanations,
+                'artifactUrl': artifact_url,
                 'analyzedAt': end_time.isoformat(),
                 'processingTime': int(processing_time),
             }
