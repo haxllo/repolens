@@ -18,6 +18,8 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const [activeView, setActiveView] = useState<'blueprint' | 'heatmap' | 'charts'>('blueprint');
   const [graphMode, setGraphMode] = useState<'blueprint' | '3d' | '2d'>('blueprint');
   
+  console.log('VisualizationsTab: scanData', scanData);
+
   if (!scanData) {
 // ... existing null check ...
   }

@@ -48,7 +48,9 @@ function getNodeColor(type: string): string {
 
 export function useGraphData(dependencies: any): GraphData {
   return useMemo(() => {
+    console.log('useGraphData: input', dependencies);
     if (!dependencies || !dependencies.graph) {
+      console.log('useGraphData: No graph data');
       return { nodes: [], links: [] }
     }
 
@@ -58,6 +60,7 @@ export function useGraphData(dependencies: any): GraphData {
     // Check for new format { nodes: [], edges: [] } with defensive checks
     const backendNodes = dependencies?.graph?.nodes;
     if (Array.isArray(backendNodes)) {
+      console.log('useGraphData: Detected new format {nodes, edges}');
       // Calculate in-degree (how many things depend on this node)
       const inDegree: Record<string, number> = {};
       if (Array.isArray(dependencies.graph.edges)) {
@@ -86,9 +89,11 @@ export function useGraphData(dependencies: any): GraphData {
         links.push(...dependencies.graph.edges.filter((e: any) => e && e.source && e.target));
       }
 
+      console.log('useGraphData: new format result', { nodes: nodes.length, links: links.length });
       return { nodes, links };
     }
 
+    console.log('useGraphData: Falling back to legacy format (adjacency list)');
     const nodeMap = new Map<string, boolean>()
 
     // Process legacy dependency graph (adjacency list)
