@@ -38,11 +38,12 @@ export default function HomePage() {
   const { scrollY } = useScroll()
   
   // Refined Docking Search Bar
-  // Adjusted start/end scroll range to account for new lower starting position
-  const searchY = useTransform(scrollY, [0, 400], [0, -420]) 
-  const searchScale = useTransform(scrollY, [0, 400], [1, 0.6])
-  const searchWidth = useTransform(scrollY, [0, 400], ['100%', '35%'])
-  const searchBlur = useTransform(scrollY, [0, 100], [0, 12])
+  // Moved start position lower (480px) and adjust end position to align with navbar center
+  const searchY = useTransform(scrollY, [0, 400], [0, -464]) 
+  // Scale down slightly but keep it substantial
+  const searchScale = useTransform(scrollY, [0, 400], [1, 0.9])
+  // Width transitions from full width (max-2xl) to fixed 500px
+  const searchWidth = useTransform(scrollY, [0, 400], ['100%', '500px'])
   
   // Smooth spring physics for the search bar
   const springConfig = { stiffness: 120, damping: 20, mass: 0.5 }
@@ -62,10 +63,13 @@ export default function HomePage() {
         <Hero3D />
       </div>
 
-      {/* Navbar & Docked Search Container */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-6 pointer-events-none">
+      {/* Navbar Container - with solid backing to prevent overlap */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-4 pointer-events-none transition-all duration-500">
+        {/* Navbar Backdrop - fades in on scroll */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-b border-white/5 opacity-0 data-[scrolled=true]:opacity-100 transition-opacity duration-500" />
+
         {/* Brand */}
-        <div className="flex items-center gap-3 pointer-events-auto backdrop-blur-sm px-4 py-2 rounded-full border border-white/5 bg-black/20">
+        <div className="flex items-center gap-3 pointer-events-auto backdrop-blur-sm px-4 py-2 rounded-full border border-white/5 bg-black/20 relative z-10">
           <div className="relative w-6 h-6 flex items-center justify-center">
             <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-50" />
             <Layers className="w-5 h-5 text-indigo-400 relative z-10" />
@@ -93,13 +97,13 @@ export default function HomePage() {
               placeholder="Find open source repos..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full py-4 pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
+              className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/80 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full py-3 pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none h-[50px]"
             />
           </div>
         </motion.div>
 
         {/* Right Nav */}
-        <div className="flex items-center gap-4 pointer-events-auto">
+        <div className="flex items-center gap-4 pointer-events-auto relative z-10">
           {!isPending && (
             <>
               {session ? (
