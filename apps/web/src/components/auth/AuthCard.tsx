@@ -37,7 +37,7 @@ export function AuthCard() {
 
     try {
       if (isSignUp) {
-        await authClient.signUp.email({
+        const result = await authClient.signUp.email({
           email,
           password,
           name,
@@ -49,9 +49,11 @@ export function AuthCard() {
             router.push('/dashboard')
           },
           onError: (ctx) => {
-            toast.error(ctx.error.message || 'Signup failed')
+            console.error('Signup Error Context:', ctx);
+            toast.error(ctx.error.message || 'Signup failed. Please try a different username or email.')
           }
         })
+        console.log('Signup result:', result);
       } else {
         await authClient.signIn.email({
           email,
