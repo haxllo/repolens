@@ -73,6 +73,8 @@ class AIExplainer:
     
     async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate Wiki using Gemini API with structured JSON output and fallback"""
+        
+        # Phase 1: High-Level Architecture (The Standard Prompt)
         prompt = self._build_wiki_prompt(analysis_data)
         
         try:
@@ -83,6 +85,14 @@ class AIExplainer:
                 )
             )
             wiki_content = json.loads(response.text)
+            
+            # Phase 2: Deep Dive (Map-Reduce Strategy)
+            # If we have file structure data, try to generate richer chapter content
+            if 'ast_files' in analysis_data:
+                enriched_chapters = await self._enrich_chapters_with_clusters(wiki_content.get('chapters', []), analysis_data)
+                if enriched_chapters:
+                    wiki_content['chapters'] = enriched_chapters
+
         except Exception as e:
             if self.model_name != 'gemini-flash-latest':
                 logger.warning(f"Primary model {self.model_name} failed, trying gemini-flash-latest fallback. Error: {str(e)}")
@@ -97,6 +107,62 @@ class AIExplainer:
             'model': self.model_name,
             'confidence': 'high'
         }
+
+    async def _enrich_chapters_with_clusters(self, chapters: List[Dict], data: Dict[str, Any]) -> List[Dict]:
+        """
+        Enhance generic chapters with specific details by analyzing directory clusters.
+        This mimics the 'React Wiki' depth by looking at specific folder roles.
+        """
+        files = data.get('ast_files', [])
+        if not files:
+            return chapters
+
+        # 1. Cluster files by top-level directory
+        clusters = {}
+        for f in files:
+            top_dir = f['path'].split('/')[0]
+            if top_dir not in clusters:
+                clusters[top_dir] = []
+            clusters[top_dir].append(f['path'])
+        
+        # Filter significant clusters (ignore tiny ones)
+        significant_clusters = {k: v for k, v in clusters.items() if len(v) > 2}
+        
+        # 2. Ask Gemini to analyze these specific clusters
+        cluster_prompt = f"""
+        Analyze these directory clusters and their file contents. 
+        For each directory, infer its specific architectural responsibility.
+        
+        CLUSTERS:
+        {json.dumps({k: v[:5] for k,v in significant_clusters.items()}, indent=2)}
+        
+        Task: Provide a 2-sentence technical summary for each directory.
+        Output JSON: {{ "directory_summaries": {{ "path": "summary" }} }}
+        """
+        
+        try:
+            cluster_res = self.model.generate_content(
+                cluster_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
+                )
+            )
+            insights = json.loads(cluster_res.text).get('directory_summaries', {})
+            
+            # 3. Inject these insights into the chapters
+            # We append a "Key Modules" section to the Architecture chapter
+            for chapter in chapters:
+                if "Architecture" in chapter['title'] or "Module" in chapter['title']:
+                    insight_text = "\n\n### Component Breakdown\n"
+                    for dir_name, summary in insights.items():
+                        insight_text += f"- **{dir_name}/**: {summary}\n"
+                    chapter['content'] += insight_text
+                    
+            return chapters
+            
+        except Exception as e:
+            logger.warning(f"Cluster enrichment failed: {e}")
+            return chapters
 
     async def _explain_with_openrouter(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate Wiki using OpenRouter API"""

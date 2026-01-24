@@ -14,6 +14,7 @@ from .readme_scorer import analyze_readme
 from .complexity import analyze_complexity
 from ..ai.explainer import AIExplainer
 from ..storage.r2_storage import R2Storage
+from ..storage.vector_storage import VectorStorage
 import json
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ class AnalysisOrchestrator:
         self.risk_scorer = RiskScorer()
         self.ai_explainer = AIExplainer()
         self.storage = R2Storage()
+        self.vector_storage = VectorStorage()
         
     async def analyze_repository(
         self, 
@@ -120,7 +122,7 @@ class AnalysisOrchestrator:
                 'complexity': complexity_metrics,
             })
             
-            # Step 12: Persist results to R2 Storage (New)
+            # Step 12: Persist results to R2 Storage
             artifact_url = None
             if self.storage.enabled:
                 logger.info('Step 12: Persisting results to R2 Storage')
@@ -135,6 +137,47 @@ class AnalysisOrchestrator:
                 success = await self.storage.upload_json(storage_key, json.dumps(storage_data))
                 if success:
                     artifact_url = self.storage.get_public_url(storage_key)
+
+            # Step 13: Semantic Indexing (Vectorize)
+            if self.vector_storage.enabled:
+                logger.info('Step 13: Generating semantic embeddings for Code Wiki')
+                # Identify high-value files (entry points, readme, config)
+                key_files = [f for f in ast_data.get('files', []) if f['path'] in ast_data.get('entryPoints', []) or 'readme' in f['path'].lower()]
+                
+                # If few key files, take top files by complexity
+                if len(key_files) < 5:
+                    sorted_files = sorted(ast_data.get('files', []), key=lambda x: x.get('functions', 0), reverse=True)
+                    key_files.extend(sorted_files[:5])
+                
+                # Prepare chunks for embedding
+                chunks = []
+                chunk_metadata = []
+                
+                for file_data in key_files[:10]: # Limit to top 10 for MVP speed
+                    # Create a rich summary representation
+                    content_summary = f"File: {file_data['path']}\nType: {file_data['language']}\nFunctions: {file_data.get('functions', 0)}\nClasses: {file_data.get('classes', 0)}"
+                    chunks.append(content_summary)
+                    chunk_metadata.append({
+                        "id": f"{scan_id}_{file_data['path']}",
+                        "values": [], # Placeholder, filled by generate_embeddings
+                        "metadata": {
+                            "scanId": scan_id,
+                            "path": file_data['path'],
+                            "language": file_data['language']
+                        }
+                    })
+                
+                if chunks:
+                    embeddings = await self.vector_storage.generate_embeddings(chunks)
+                    if embeddings:
+                        # Combine embeddings with metadata
+                        vectors_to_upsert = []
+                        for i, emb in enumerate(embeddings):
+                            vector_record = chunk_metadata[i]
+                            vector_record['values'] = emb
+                            vectors_to_upsert.append(vector_record)
+                        
+                        await self.vector_storage.upsert_vectors(vectors_to_upsert)
 
             # Cleanup
             await self.repo_cloner.cleanup(repo_path)
