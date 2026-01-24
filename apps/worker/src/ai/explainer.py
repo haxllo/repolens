@@ -1,67 +1,91 @@
 import os
+import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
 class AIExplainer:
-    """Generate AI-powered explanations using various AI providers"""
+    """Generate AI-powered Wiki documentation using various AI providers"""
     
     def __init__(self):
-        # Check for OpenRouter API key first (recommended)
-        openrouter_key = os.getenv('OPENROUTER_API_KEY')
         gemini_key = os.getenv('GEMINI_API_KEY')
+        openrouter_key = os.getenv('OPENROUTER_API_KEY')
         
-        if openrouter_key:
-            self.provider = 'openrouter'
-            self.api_key = openrouter_key
-            self.model = os.getenv('OPENROUTER_MODEL', 'mistralai/devstral-2512:free')
-            self.enabled = True
-            logger.info(f'Using OpenRouter with model: {self.model}')
-        elif gemini_key:
+        if gemini_key:
             genai.configure(api_key=gemini_key)
             self.provider = 'gemini'
-            self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            # Using 1.5 Flash for speed and excellent structured output
+            self.model = genai.GenerativeModel(
+                model_name='gemini-1.5-flash',
+                system_instruction="""You are an expert software architect and technical writer. 
+                Your task is to transform raw static analysis data into a high-quality technical Wiki.
+                Focus on clarity, architectural patterns, and actionable insights.
+                Always return valid JSON following the requested schema."""
+            )
             self.enabled = True
-            logger.info('Using Gemini AI')
+            logger.info('Using Gemini AI for Wiki generation')
+        elif openrouter_key:
+            self.provider = 'openrouter'
+            self.api_key = openrouter_key
+            self.model_name = os.getenv('OPENROUTER_MODEL', 'mistralai/devstral-2512:free')
+            self.enabled = True
+            logger.info(f'Using OpenRouter with model: {self.model_name}')
         else:
-            logger.warning('No AI API key found, AI explanations disabled')
+            logger.warning('No AI API key found, Wiki generation disabled')
             self.provider = None
             self.enabled = False
             
     async def explain(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate natural language explanations for analysis results
-        
-        Args:
-            analysis_data: Deterministic analysis results
-            
-        Returns:
-            AI-generated explanations and insights
+        Generate structured Wiki chapters for analysis results
         """
         if not self.enabled:
-            return self._generate_fallback_explanations(analysis_data)
+            return self._generate_fallback_wiki(analysis_data)
         
         try:
-            logger.info('Generating AI explanations')
+            logger.info('Generating AI Wiki Chapters')
             
-            if self.provider == 'openrouter':
-                return await self._explain_with_openrouter(analysis_data)
-            elif self.provider == 'gemini':
+            if self.provider == 'gemini':
                 return await self._explain_with_gemini(analysis_data)
+            elif self.provider == 'openrouter':
+                return await self._explain_with_openrouter(analysis_data)
             else:
-                return self._generate_fallback_explanations(analysis_data)
+                return self._generate_fallback_wiki(analysis_data)
                 
         except Exception as e:
-            logger.error(f'AI explanation failed: {str(e)}')
-            return self._generate_fallback_explanations(analysis_data)
+            logger.error(f'Wiki generation failed: {str(e)}')
+            return self._generate_fallback_wiki(analysis_data)
     
+    async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate Wiki using Gemini API with structured JSON output"""
+        prompt = self._build_wiki_prompt(analysis_data)
+        
+        response = self.model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json",
+            )
+        )
+        
+        try:
+            wiki_content = json.loads(response.text)
+            return {
+                **wiki_content,
+                'provider': 'gemini',
+                'model': 'gemini-1.5-flash',
+                'confidence': 'high'
+            }
+        except json.JSONDecodeError:
+            logger.error("Failed to parse Gemini JSON response")
+            return self._generate_fallback_wiki(analysis_data)
+
     async def _explain_with_openrouter(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate explanations using OpenRouter API"""
+        """Generate Wiki using OpenRouter API"""
         import aiohttp
         
-        prompt = self._build_prompt(analysis_data)
+        prompt = self._build_wiki_prompt(analysis_data)
         
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -71,91 +95,110 @@ class AIExplainer:
                     'Content-Type': 'application/json',
                 },
                 json={
-                    'model': self.model,
+                    'model': self.model_name,
                     'messages': [
                         {
                             'role': 'system',
-                            'content': 'You are a code analysis expert. Provide concise, actionable insights about repository quality, risks, and improvements.'
+                            'content': 'You are a technical documentation expert. Return only valid JSON.'
                         },
                         {
                             'role': 'user',
                             'content': prompt
                         }
                     ],
-                    'max_tokens': 500,
-                    'temperature': 0.7,
+                    'response_format': { 'type': 'json_object' }
                 }
             ) as response:
                 if response.status != 200:
-                    error_text = await response.text()
-                    raise Exception(f'{response.status} {error_text}')
+                    raise Exception(f'OpenRouter error: {response.status}')
                 
                 result = await response.json()
                 content = result['choices'][0]['message']['content']
+                wiki_content = json.loads(content)
                 
                 return {
-                    'summary': content,
+                    **wiki_content,
                     'provider': 'openrouter',
-                    'model': self.model,
+                    'model': self.model_name,
                     'confidence': 'high'
                 }
-    
-    async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate explanations using Gemini API"""
-        prompt = self._build_prompt(analysis_data)
-        response = self.model.generate_content(prompt)
-        
-        return {
-            'summary': response.text,
-            'provider': 'gemini',
-            'confidence': 'high'
-        }
             
-    def _build_prompt(self, data: Dict[str, Any]) -> str:
-        """Build prompt for AI model"""
+    def _build_wiki_prompt(self, data: Dict[str, Any]) -> str:
+        """Build a sophisticated prompt for Wiki generation"""
         languages = data.get('languages', {})
-        frameworks = languages.get('frameworks', [])
-        primary_lang = languages.get('primary', 'unknown')
-        risk_scores = data.get('risk_scores', {})
-        dependencies = data.get('dependencies', {})
-        readme_analysis = data.get('readme_analysis', {})
+        risk = data.get('risk_scores', {})
+        deps = data.get('dependencies', {})
+        readme = data.get('readme_analysis', {})
+        complexity = data.get('complexity', {})
+        dead_code = data.get('dead_code', {})
         
-        prompt = f"""You are a code analysis expert. Based on the following DETERMINISTIC analysis data, provide a concise, structured explanation of this repository.
+        # Prepare context for the AI
+        context = {
+            "tech_stack": {
+                "primary": languages.get('primary'),
+                "frameworks": languages.get('frameworks', []),
+                "dependency_count": deps.get('statistics', {}).get('total', 0)
+            },
+            "health_metrics": {
+                "risk_score": risk.get('overall'),
+                "maintainability": risk.get('maintainability'),
+                "has_dead_code": dead_code.get('has_dead_code', False),
+                "circular_deps_count": len(data.get('circular_dependencies', {}).get('cycles', []))
+            },
+            "complexity": {
+                "avg_complexity": complexity.get('statistics', {}).get('averageComplexity'),
+                "hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:3]]
+            }
+        }
 
-ANALYSIS DATA:
-- Primary Language: {primary_lang}
-- Frameworks: {', '.join(frameworks) if frameworks else 'None detected'}
-- Total Files: {data.get('ast_summary', {}).get('totalFunctions', 0)}
-- Dependencies: {dependencies.get('statistics', {}).get('total', 0)} packages
-- Risk Score: {risk_scores.get('overall', 0)}/100 ({risk_scores.get('level', 'unknown')} risk)
-- Maintainability: {risk_scores.get('maintainability', 0)}/100
-- README Quality: {readme_analysis.get('grade', 'N/A')} ({readme_analysis.get('quality_score', 0)}/100)
+        prompt = f"""Generate a comprehensive Technical Wiki for this repository based on the analysis context below.
 
-IMPORTANT: 
-- Only explain what the data shows
-- Do not speculate or hallucinate
-- Be concise (3-4 sentences)
-- Focus on actionable insights
+CONTEXT:
+{json.dumps(context, indent=2)}
 
-Provide a summary in this format:
-1. What this repository likely is
-2. Key technical characteristics
-3. Main quality/risk concerns (if any)
-4. Top recommendation for improvement
+OUTPUT SCHEMA:
+{{
+  "summary": "One sentence "elevator pitch" of the project",
+  "chapters": [
+    {{
+      "title": "System Overview",
+      "content": "Markdown detailing the project's purpose and core capabilities."
+    }},
+    {{
+      "title": "Architecture & Components",
+      "content": "Markdown describing how the code is organized, major patterns (MVC, Hexagonal, etc.), and key building blocks."
+    }},
+    {{
+      "title": "Data Flow & Integrations",
+      "content": "Markdown explaining how data moves through the system and how it interacts with external dependencies."
+    }},
+    {{
+      "title": "Development Health & Maintenance",
+      "content": "Markdown assessing code quality, technical debt (dead code, complexity), and suggestions for improvement."
+    }}
+  ]
+}}
+
+INSTRUCTIONS:
+- Use professional Markdown for chapter content (headings, lists, code blocks).
+- Be descriptive and analytical.
+- Infer purpose from the tech stack and file structure context.
+- DO NOT mention the analysis data points directly (e.g., don't say "The risk score is 20"), instead describe the health of the project qualitatively based on those scores.
 """
-        
         return prompt
         
-    def _generate_fallback_explanations(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate basic explanations without AI"""
-        languages = data.get('languages', {})
-        primary = languages.get('primary', 'unknown')
-        risk = data.get('risk_scores', {}).get('level', 'medium')
-        
-        summary = f"This is a {primary} project. Risk level: {risk}."
+    def _generate_fallback_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate basic Wiki structure when AI fails"""
+        primary = data.get('languages', {}).get('primary', 'unknown')
         
         return {
-            'summary': summary,
+            'summary': f"A {primary} project analysis.",
+            'chapters': [
+                {
+                    "title": "System Overview",
+                    "content": f"This repository primarily uses {primary}."
+                }
+            ],
             'provider': 'fallback',
             'confidence': 'low'
         }

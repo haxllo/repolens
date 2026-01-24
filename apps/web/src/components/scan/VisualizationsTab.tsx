@@ -1,12 +1,11 @@
-"use client";
-
 import { FileTreeHeatmap } from "@/components/visualizations/FileTreeHeatmap";
 import { ComplexityCharts } from "@/components/visualizations/ComplexityCharts";
 import DependencyGraph3D from "@/components/graphs/DependencyGraph3D";
 import { DependencyGraph2D } from "@/components/graphs/DependencyGraph2D";
 import { BlueprintGraph } from "@/components/graphs/BlueprintGraph";
+import { WikiView } from "@/components/wiki/WikiView";
 import { useState } from "react";
-import { Grid3X3, BarChart3, GitBranch, Map as MapIcon, Globe } from "lucide-react";
+import { Grid3X3, BarChart3, GitBranch, Map as MapIcon, Globe, BookOpen } from "lucide-react";
 import { useBlueprintData } from "@/hooks/useBlueprintData";
 import { useGraphData } from "@/hooks/useGraphData";
 
@@ -15,7 +14,7 @@ interface VisualizationsTabProps {
 }
 
 export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
-  const [activeView, setActiveView] = useState<'blueprint' | 'heatmap' | 'charts'>('blueprint');
+  const [activeView, setActiveView] = useState<'wiki' | 'blueprint' | 'heatmap' | 'charts'>('wiki');
   const [graphMode, setGraphMode] = useState<'blueprint' | '3d' | '2d'>('blueprint');
   
   if (!scanData) {
@@ -45,6 +44,7 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const blueprintData = useBlueprintData(graphData);
 
   const tabs = [
+    { id: 'wiki', label: 'Knowledge Base', icon: BookOpen },
     { id: 'blueprint', label: 'Architecture', icon: MapIcon },
     { id: 'heatmap', label: 'Hotspots', icon: Grid3X3 },
     { id: 'charts', label: 'Analytics', icon: BarChart3 },
@@ -71,9 +71,13 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
       </div>
 
       {/* Content */}
-      <div className="glass p-6 min-h-[700px] flex flex-col">
+      <div className="min-h-[700px] flex flex-col">
+        {activeView === 'wiki' && (
+          <WikiView data={scanData.explanations} repoUrl={scanData.repoUrl} />
+        )}
+
         {activeView === 'blueprint' && (
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="glass p-6 flex-1 flex flex-col gap-4">
             <div className="flex justify-between items-end">
               <div>
                 <h3 className="text-xl font-bold text-white">Project Blueprint</h3>
@@ -110,11 +114,15 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
         )}
 
         {activeView === 'heatmap' && (
-          <FileTreeHeatmap files={files} riskScores={riskScores} />
+          <div className="glass p-6 rounded-3xl">
+            <FileTreeHeatmap files={files} riskScores={riskScores} />
+          </div>
         )}
 
         {activeView === 'charts' && (
-          <ComplexityCharts files={files} riskScores={riskScores} />
+          <div className="glass p-6 rounded-3xl">
+            <ComplexityCharts files={files} riskScores={riskScores} />
+          </div>
         )}
       </div>
     </div>
