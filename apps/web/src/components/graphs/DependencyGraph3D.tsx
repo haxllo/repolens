@@ -132,11 +132,21 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
       for (let j = 0; j < nodes.length; j++) {
         for (let k = j + 1; k < nodes.length; k++) {
           const n1 = nodes[j]; const n2 = nodes[k]
-          const dx = n2.x - n1.x; const dy = n2.y - n1.y; const dz = n2.z - n1.z
-          const distSq = dx * dx + dy * dy + dz * dz || 1
-          const force = (n1.group === n2.group ? 1.0 : 2.5) / distSq // Repel different groups more
-          n1.vx -= dx * force; n1.vy -= dy * force; n1.vz -= dz * force
-          n2.vx += dx * force; n2.vy += dy * force; n2.vz += dz * force
+          let dx = n2.x - n1.x; let dy = n2.y - n1.y; let dz = n2.z - n1.z
+          
+          // Add small random jitter if nodes are exactly at same position
+          if (dx === 0 && dy === 0 && dz === 0) {
+            dx = (Math.random() - 0.5) * 0.1
+            dy = (Math.random() - 0.5) * 0.1
+            dz = (Math.random() - 0.5) * 0.1
+          }
+
+          const distSq = Math.max(0.1, dx * dx + dy * dy + dz * dz)
+          const force = Math.min(2, (n1.group === n2.group ? 1.0 : 2.5) / distSq)
+          
+          const fx = dx * force; const fy = dy * force; const fz = dz * force
+          n1.vx -= fx; n1.vy -= fy; n1.vz -= fz
+          n2.vx += fx; n2.vy += fy; n2.vz += fz
         }
       }
 
@@ -145,10 +155,12 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
         const s = nodeMap.get(link.source); const t = nodeMap.get(link.target)
         if (!s || !t) continue
         const dx = t.x - s.x; const dy = t.y - s.y; const dz = t.z - s.z
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
-        const force = dist * 0.08
-        s.vx += dx * force; s.vy += dy * force; s.vz += dz * force
-        t.vx -= dx * force; t.vy -= dy * force; t.vz -= dz * force
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.1
+        const force = Math.min(0.5, dist * 0.05) // Cap attraction force
+        
+        const fx = dx * force; const fy = dy * force; const fz = dz * force
+        s.vx += fx; s.vy += fy; s.vz += fz
+        t.vx -= fx; t.vy -= fy; t.vz -= fz
       }
 
       // Type-based Gravity (Clustering)
@@ -169,7 +181,17 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
         // Universal Gravity
         n.vx -= n.x * 0.01; n.vy -= n.y * 0.01; n.vz -= n.z * 0.01
         
+        // Apply velocity
         n.x += n.vx; n.y += n.vy; n.z += n.vz
+        
+        // Final safety check for NaN
+        if (isNaN(n.x)) n.x = (Math.random() - 0.5) * 10
+        if (isNaN(n.y)) n.y = (Math.random() - 0.5) * 10
+        if (isNaN(n.z)) n.z = (Math.random() - 0.5) * 10
+        if (isNaN(n.vx)) n.vx = 0
+        if (isNaN(n.vy)) n.vy = 0
+        if (isNaN(n.vz)) n.vz = 0
+
         n.vx *= 0.5; n.vy *= 0.5; n.vz *= 0.5 // Heavy damping
       }
     }
@@ -195,15 +217,21 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
       {data.links.map((link, index) => {
         const start = positions.get(link.source)
         const end = positions.get(link.target)
+        if (!start || !end) return null
+        
+        // Final sanity check for NaN values in positions
+        if (start.some(isNaN) || end.some(isNaN)) return null
+
         const sourceNode = data.nodes.find(n => n.id === link.source)
-        if (start && end) return <Edge key={index} start={start} end={end} color={sourceNode?.color} />
-        return null
+        return <Edge key={index} start={start} end={end} color={sourceNode?.color} />
       })}
 
       {/* Render nodes */}
       {data.nodes.map((node) => {
         const pos = positions.get(node.id)
-        if (pos) return (
+        if (!pos || pos.some(isNaN)) return null
+        
+        return (
           <Node
             key={node.id}
             node={node}
@@ -211,7 +239,6 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
             onClick={() => onNodeClick?.(node)}
           />
         )
-        return null
       })}
 
       <OrbitControls 
