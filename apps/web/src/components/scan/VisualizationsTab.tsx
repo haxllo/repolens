@@ -6,7 +6,7 @@ import DependencyGraph3D from "@/components/graphs/DependencyGraph3D";
 import { DependencyGraph2D } from "@/components/graphs/DependencyGraph2D";
 import { BlueprintGraph } from "@/components/graphs/BlueprintGraph";
 import { useState } from "react";
-import { Grid3X3, BarChart3, GitBranch, Box, Layers, Map as MapIcon, Globe } from "lucide-react";
+import { Grid3X3, BarChart3, GitBranch, Map as MapIcon, Globe } from "lucide-react";
 import { useBlueprintData } from "@/hooks/useBlueprintData";
 import { useGraphData } from "@/hooks/useGraphData";
 
@@ -18,10 +18,12 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const [activeView, setActiveView] = useState<'blueprint' | 'heatmap' | 'charts'>('blueprint');
   const [graphMode, setGraphMode] = useState<'blueprint' | '3d' | '2d'>('blueprint');
   
-  console.log('VisualizationsTab: scanData', scanData);
-
   if (!scanData) {
-// ... existing null check ...
+    return (
+      <div className="flex items-center justify-center h-64 glass rounded-2xl">
+        <p className="text-white/50 text-sm italic">Waiting for analysis results...</p>
+      </div>
+    );
   }
 
   // Access files from AST data

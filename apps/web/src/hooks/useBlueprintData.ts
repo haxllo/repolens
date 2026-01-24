@@ -15,7 +15,6 @@ export interface BlueprintData {
 
 export function useBlueprintData(graphData: GraphData): BlueprintData {
   return useMemo(() => {
-    console.log('useBlueprintData: input', { nodes: graphData.nodes.length, links: graphData.links.length });
     const { nodes, links } = graphData;
     if (nodes.length === 0) {
       return { nodes: [], links: [], layers: 0 };
@@ -89,7 +88,6 @@ export function useBlueprintData(graphData: GraphData): BlueprintData {
     });
 
     const maxRank = Math.max(...blueprintNodes.map(n => n.rank), 0);
-    console.log('useBlueprintData: layers detected', maxRank + 1);
 
     return {
       nodes: blueprintNodes,
