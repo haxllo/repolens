@@ -98,12 +98,17 @@ function Node({
 }
 
 function Edge({ start, end, color }: { start: [number, number, number]; end: [number, number, number]; color?: string }) {
-  const points = useMemo(() => [new THREE.Vector3(...start), new THREE.Vector3(...end)], [start, end])
+  // Using a flat array of coordinates is more stable for the Line component
+  const points = useMemo(() => [
+    start[0], start[1], start[2],
+    end[0], end[1], end[2]
+  ], [start, end])
+
   return (
     <Line 
-      points={points} 
+      points={points as any} 
       color={color || "#ffffff"} 
-      lineWidth={0.8} 
+      lineWidth={1} 
       opacity={0.2} 
       transparent 
     />
@@ -115,85 +120,88 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
     const posMap = new Map<string, [number, number, number]>()
     if (data.nodes.length === 0) return posMap
 
-    const nodes = data.nodes.map((node) => ({
-      ...node,
-      x: (Math.random() - 0.5) * 30,
-      y: (Math.random() - 0.5) * 30,
-      z: (Math.random() - 0.5) * 30,
-      vx: 0, vy: 0, vz: 0,
-    }))
+    // Initial stable distribution
+    const nodes = data.nodes.map((node, i) => {
+      // Use a more distributed initial state than purely random
+      const phi = Math.acos(-1 + (2 * i) / data.nodes.length)
+      const theta = Math.sqrt(data.nodes.length * Math.PI) * phi
+      const r = 15
+      
+      return {
+        ...node,
+        x: r * Math.cos(theta) * Math.sin(phi) || (Math.random() - 0.5) * 2,
+        y: r * Math.sin(theta) * Math.sin(phi) || (Math.random() - 0.5) * 2,
+        z: r * Math.cos(phi) || (Math.random() - 0.5) * 2,
+        vx: 0, vy: 0, vz: 0,
+      }
+    })
 
-    // Advanced 3D Force Simulation with Clustering
-    const iterations = 200
     const nodeMap = new Map(nodes.map(n => [n.id, n]))
+    let alpha = 1.0 // Cooling factor
+    const iterations = 120
 
     for (let i = 0; i < iterations; i++) {
-      // Repulsion (Many-Body)
+      // 1. Repulsion (Many-Body)
       for (let j = 0; j < nodes.length; j++) {
         for (let k = j + 1; k < nodes.length; k++) {
           const n1 = nodes[j]; const n2 = nodes[k]
           let dx = n2.x - n1.x; let dy = n2.y - n1.y; let dz = n2.z - n1.z
           
-          // Add small random jitter if nodes are exactly at same position
+          // Jitter for identical positions
           if (dx === 0 && dy === 0 && dz === 0) {
-            dx = (Math.random() - 0.5) * 0.1
-            dy = (Math.random() - 0.5) * 0.1
-            dz = (Math.random() - 0.5) * 0.1
+            dx = 0.1; dy = 0.1; dz = 0.1
           }
 
-          const distSq = Math.max(0.1, dx * dx + dy * dy + dz * dz)
-          const force = Math.min(2, (n1.group === n2.group ? 1.0 : 2.5) / distSq)
+          const distSq = dx * dx + dy * dy + dz * dz
+          const dist = Math.sqrt(distSq)
           
-          const fx = dx * force; const fy = dy * force; const fz = dz * force
+          // Repulsion force inversely proportional to distance
+          const strength = (n1.group === n2.group ? 20 : 40) * alpha
+          const force = strength / Math.max(1, distSq)
+          
+          const fx = (dx / dist) * force; const fy = (dy / dist) * force; const fz = (dz / dist) * force
           n1.vx -= fx; n1.vy -= fy; n1.vz -= fz
           n2.vx += fx; n2.vy += fy; n2.vz += fz
         }
       }
 
-      // Attraction (Links)
+      // 2. Attraction (Links)
       for (const link of data.links) {
         const s = nodeMap.get(link.source); const t = nodeMap.get(link.target)
         if (!s || !t) continue
-        const dx = t.x - s.x; const dy = t.y - s.y; const dz = t.z - s.z
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.1
-        const force = Math.min(0.5, dist * 0.05) // Cap attraction force
         
-        const fx = dx * force; const fy = dy * force; const fz = dz * force
+        const dx = t.x - s.x; const dy = t.y - s.y; const dz = t.z - s.z
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (dist < 0.1) continue
+
+        // Spring force proportional to distance
+        const strength = 0.04 * alpha
+        const fx = dx * strength; const fy = dy * strength; const fz = dz * strength
+        
         s.vx += fx; s.vy += fy; s.vz += fz
         t.vx -= fx; t.vy -= fy; t.vz -= fz
       }
 
-      // Type-based Gravity (Clustering)
-      const groupCenters: Record<string, {x: number, y: number, z: number}> = {
-        'root': {x: 0, y: 0, z: 0},
-        'npm': {x: 15, y: 10, z: 0},
-        'pip': {x: -15, y: 10, z: 0},
-        'module': {x: 0, y: -15, z: 10},
-        'file': {x: 0, y: -15, z: -10},
-      }
-
+      // 3. Update positions and apply gravity/damping
       for (const n of nodes) {
-        const target = groupCenters[n.group] || {x: 0, y: 0, z: 0}
-        n.vx += (target.x - n.x) * 0.01
-        n.vy += (target.y - n.y) * 0.01
-        n.vz += (target.z - n.z) * 0.01
+        // Center gravity
+        n.vx -= n.x * 0.01 * alpha
+        n.vy -= n.y * 0.01 * alpha
+        n.vz -= n.z * 0.01 * alpha
         
-        // Universal Gravity
-        n.vx -= n.x * 0.01; n.vy -= n.y * 0.01; n.vz -= n.z * 0.01
-        
-        // Apply velocity
+        // Final position update
         n.x += n.vx; n.y += n.vy; n.z += n.vz
         
-        // Final safety check for NaN
-        if (isNaN(n.x)) n.x = (Math.random() - 0.5) * 10
-        if (isNaN(n.y)) n.y = (Math.random() - 0.5) * 10
-        if (isNaN(n.z)) n.z = (Math.random() - 0.5) * 10
-        if (isNaN(n.vx)) n.vx = 0
-        if (isNaN(n.vy)) n.vy = 0
-        if (isNaN(n.vz)) n.vz = 0
-
-        n.vx *= 0.5; n.vy *= 0.5; n.vz *= 0.5 // Heavy damping
+        // Heavy Damping
+        n.vx *= 0.4; n.vy *= 0.4; n.vz *= 0.4
+        
+        // Absolute NaN/Infinity protection
+        if (!isFinite(n.x)) n.x = (Math.random() - 0.5) * 5
+        if (!isFinite(n.y)) n.y = (Math.random() - 0.5) * 5
+        if (!isFinite(n.z)) n.z = (Math.random() - 0.5) * 5
       }
+      
+      alpha *= 0.96 // Cool down
     }
 
     nodes.forEach(n => posMap.set(n.id, [n.x, n.y, n.z]))
