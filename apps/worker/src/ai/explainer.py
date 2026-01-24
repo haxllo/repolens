@@ -225,14 +225,18 @@ class AIExplainer:
                     curr[part] = {}
                 curr = curr[part]
 
+        ast_summary = data.get('ast_summary', {})
+        patterns = ast_summary.get('patterns', {})
+
         context = {
             "tech_stack": {
                 "primary": languages.get('primary'),
                 "frameworks": languages.get('frameworks', []),
+                "patterns": patterns, # NEW: Detected libs like Zustand, Radix, etc.
                 "dependencies": deps.get('statistics', {}).get('total', 0)
             },
             "system": {
-                "build_scripts": list(system.get('scripts', {}).keys())[:10],
+                "build_scripts": list(system.get('scripts', {}).keys())[:15],
                 "ci_workflows": [w['name'] for w in system.get('ci_workflows', [])],
                 "infrastructure": system.get('infrastructure', []),
                 "governance": system.get('governance', [])
@@ -248,57 +252,56 @@ class AIExplainer:
             }
         }
 
-        prompt = f"""As a Principal Software Architect, generate a "CodeWiki" for this repository. 
-The goal is to provide a "Knowledge Map" that helps a new senior engineer understand the system's mental model in 5 minutes.
+        prompt = f"""As a Principal Software Architect, generate a "Master Knowledge Base" for this repository. 
+The goal is to provide a "Deep Insight Report" that surpasses standard documentation. Think like the creator of the code.
 
 CONTEXT:
 {json.dumps(context, indent=2)}
 
 OUTPUT SCHEMA:
 {{
-  "summary": "High-level architectural purpose of the system.",
+  "summary": "Professional architectural purpose. Identify the core 'Mental Model' of the system.",
   "onboarding_flow": {{
-    "welcome_message": "A friendly greeting summarizing the project's scale and nature.",
+    "welcome_message": "Friendly greeting summarizing the technical ambition.",
     "guided_paths": [
-      {{ "title": "e.g., The API Journey", "description": "How requests are handled", "chapter_index": 0 }},
-      {{ "title": "e.g., Data & State", "description": "How the system stores information", "chapter_index": 1 }}
+      {{ "title": "e.g., Request Lifecycle", "description": "How data flows from A to B", "chapter_index": 0 }}
     ],
     "first_steps": [
-      {{ "file": "path/to/file", "reason": "Why this file is important to read first" }}
+      {{ "file": "path/to/file", "reason": "Strategic importance" }}
     ]
   }},
   "chapters": [
     {{
-      "title": "Core Architecture & Design Patterns",
-      "content": "Deep dive into the structural layout (e.g. Layered, DDD, microservices). Identify key patterns used (e.g. Factory, Observer, Hooks)."
+      "title": "Architectural Foundation & Ecosystem",
+      "content": "Analyze the choice of libraries ({', '.join(patterns.get('state_management', []))}, {', '.join(patterns.get('ui_libraries', []))}). Explain how they form the backbone of the project."
     }},
     {{
-      "title": "Module Directory & Responsibilities",
-      "content": "Explain what each major directory in the file tree is responsible for. Group them logically (e.g. 'Business Logic', 'UI Components', 'Data Access')."
+      "title": "Module Strategy & Separation of Concerns",
+      "content": "Explain the relationship between major directories. How does the logic in folder A support folder B? (e.g. 'The Registry uses the CLI for automation')."
     }},
     {{
-      "title": "Development Workflow & Operations",
-      "content": "Explain how to build, test, and run the project based on the detected scripts and CI workflows. Mention key infrastructure tools (Docker, K8s)."
+      "title": "Development Lifecycle & Operations",
+      "content": "Deep dive into scripts and CI. Explain NOT JUST what they are, but HOW they automate the developer experience."
     }},
     {{
-      "title": "Execution Flow & Entry Points",
-      "content": "Describe how the system starts and how data typically flows from entry points through the core logic."
+      "title": "Data Flow & State Propagation",
+      "content": "If patterns like Redux or Context are used, explain how global state is managed across the tree."
     }},
     {{
-      "title": "Technical Debt & Evolution Path",
-      "content": "Based on hotspots and complexity, where should the team focus refactoring? What are the architectural risks?"
+      "title": "Technical Evolution & Optimization",
+      "content": "Identify the 'North Star' for refactoring. Where is the project growing, and what are the structural bottlenecks?"
     }}
   ],
   "module_map": [
-     {{ "path": "string", "role": "short description of purpose" }}
+     {{ "path": "string", "role": "Specific functional responsibility" }}
   ]
 }}
 
 INSTRUCTIONS:
-- Use professional, analytical Markdown.
-- Infer "Why" things are built this way from the directory names and tech stack.
-- Be specific. If you see 'apps/api', explain it as the backend entry point.
-- The 'module_map' should map major directories to their functional roles.
+- Tone: Analytical, authoritative, and visionary.
+- Depth: Do not just list files. Explain 'The Why'. 
+- Connect the dots: Explain how the Build Scripts relate to the Deployment Infrastructure.
+- Mention specific detected patterns: {json.dumps(patterns)}
 """
         return prompt
         
