@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { 
@@ -42,7 +42,7 @@ interface HistoryResponse {
 }
 
 export default function HistoryPage() {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [history, setHistory] = useState<HistoryResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +118,7 @@ export default function HistoryPage() {
     return match ? match[1] : url
   }
 
-  if (false && !session) {
+  if (!session) {
     return (
       <div className="text-center py-12">
         <p className="text-white/50">Please sign in to view your scan history</p>

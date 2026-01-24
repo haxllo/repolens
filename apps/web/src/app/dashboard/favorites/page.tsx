@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Star, GitBranch, Clock, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
@@ -23,7 +23,7 @@ interface FavoriteRepository {
 }
 
 export default function FavoritesPage() {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [favorites, setFavorites] = useState<FavoriteRepository[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -64,7 +64,7 @@ export default function FavoritesPage() {
     return date.toLocaleDateString()
   }
 
-  if (false && !session) {
+  if (!session) {
     return (
       <div className="text-center py-12">
         <p className="text-white/50">Please sign in to view your favorites</p>

@@ -1,4 +1,5 @@
 import type { ScanRequest, ScanResponse, ScanResult } from '@repolens/shared'
+import { authClient } from '@/lib/auth-client'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -12,8 +13,8 @@ export class ApiClient {
   private async getAuthToken(): Promise<string | null> {
     // Get token from session if available
     if (typeof window !== 'undefined') {
-      const session = await fetch('/api/auth/session').then(r => r.json())
-      return session?.accessToken || null
+      const session = await authClient.getSession();
+      return session.data?.session.token || null;
     }
     return null
   }

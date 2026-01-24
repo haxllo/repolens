@@ -1,11 +1,14 @@
-import { getServerSession } from 'next-auth'
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { authOptions } from '@/lib/auth'
-import { Zap, LayoutDashboard, History, Star, LogOut, User } from 'lucide-react'
+import { Zap, LayoutDashboard, History, Star, User } from 'lucide-react'
+import { SignOutButton } from '@/components/auth/SignOutButton'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions)
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
 
   if (!session) {
     redirect('/auth/signin')
@@ -58,17 +61,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <User className="h-5 w-5 text-white/50" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{session.user?.name || 'User'}</p>
-                <p className="text-xs text-white/40 truncate">{session.user?.email}</p>
+                <p className="text-sm font-medium truncate">{session.user.name || 'User'}</p>
+                <p className="text-xs text-white/40 truncate">{session.user.email}</p>
               </div>
             </div>
-            <a 
-              href="/api/auth/signout" 
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/[0.06] transition-colors w-full"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </a>
+            <SignOutButton />
           </div>
         </div>
       </aside>

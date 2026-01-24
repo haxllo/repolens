@@ -1,11 +1,13 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import ScanForm from '@/components/dashboard/ScanForm'
 import ScanList from '@/components/dashboard/ScanList'
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  const userIdentifier = (session?.user as any)?.id || session?.user?.email
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+  const userIdentifier = session?.user.id || session?.user.email
 
   return (
     <div className="space-y-8">

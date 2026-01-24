@@ -1,13 +1,20 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Github, ArrowRight } from 'lucide-react'
 
 export function HeaderSignIn() {
+  const handleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: 'github',
+      callbackURL: '/dashboard'
+    })
+  }
+
   return (
     <Button 
-      onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+      onClick={handleSignIn}
       className="bg-lime-400 hover:bg-lime-500 text-black font-medium"
     >
       <Github className="mr-2 h-4 w-4" />
@@ -17,9 +24,16 @@ export function HeaderSignIn() {
 }
 
 export function HeroSignIn() {
+  const handleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: 'github',
+      callbackURL: '/dashboard'
+    })
+  }
+
   return (
     <button
-      onClick={() => signIn('github', { callbackUrl: '/dashboard' })}
+      onClick={handleSignIn}
       className="group relative h-12 px-8 text-base font-semibold overflow-hidden bg-transparent border-2 border-lime-400 text-lime-400 transition-all duration-300 hover:text-black"
     >
       <span className="absolute inset-0 bg-lime-400 translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />

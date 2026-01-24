@@ -1,45 +1,27 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { authClient } from '@/lib/auth-client'
 import { redirect, useSearchParams } from 'next/navigation'
 import { SignInButton } from '@/components/SignInButton'
 import { Zap, AlertCircle } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 
-export default function SignInPage() {
-  const { data: session, status } = useSession()
+function SignInContent() {
+  const { data: session, isPending: loading } = authClient.useSession()
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (session) {
       redirect('/dashboard')
     }
-  }, [status])
+  }, [session])
 
   const getErrorMessage = (error: string) => {
-    switch (error) {
-      case 'Signin':
-      case 'OAuthSignin':
-      case 'OAuthCallback':
-      case 'OAuthCreateAccount':
-      case 'EmailCreateAccount':
-      case 'Callback':
-        return 'There was a problem linking your GitHub account. Please try again or check your database connection.'
-      case 'OAuthAccountNotLinked':
-        return 'To confirm your identity, please sign in with the same account you used originally.'
-      case 'EmailSignin':
-        return 'The e-mail could not be sent.'
-      case 'CredentialsSignin':
-        return 'Sign in failed. Check the details you provided are correct.'
-      case 'SessionRequired':
-        return 'Please sign in to access this page.'
-      default:
-        return 'An unexpected authentication error occurred.'
-    }
+    return error ? 'Authentication failed. Please try again.' : null;
   }
 
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
@@ -87,5 +69,17 @@ export default function SignInPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 }
