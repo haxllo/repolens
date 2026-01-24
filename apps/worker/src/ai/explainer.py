@@ -17,15 +17,16 @@ class AIExplainer:
             genai.configure(api_key=gemini_key)
             self.provider = 'gemini'
             # Using 1.5 Flash for speed and excellent structured output
+            self.model_name = 'gemini-1.5-flash'
             self.model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
+                model_name=self.model_name,
                 system_instruction="""You are an expert software architect and technical writer. 
                 Your task is to transform raw static analysis data into a high-quality technical Wiki.
                 Focus on clarity, architectural patterns, and actionable insights.
                 Always return valid JSON following the requested schema."""
             )
             self.enabled = True
-            logger.info('Using Gemini AI for Wiki generation')
+            logger.info(f'Using Gemini AI with model: {self.model_name}')
         elif openrouter_key:
             self.provider = 'openrouter'
             self.api_key = openrouter_key
@@ -56,6 +57,14 @@ class AIExplainer:
                 
         except Exception as e:
             logger.error(f'Wiki generation failed: {str(e)}')
+            if self.provider == 'gemini':
+                try:
+                    logger.info("Listing available Gemini models for debugging:")
+                    for m in genai.list_models():
+                        if 'generateContent' in m.supported_generation_methods:
+                            logger.info(f"Available model: {m.name}")
+                except:
+                    pass
             return self._generate_fallback_wiki(analysis_data)
     
     async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
