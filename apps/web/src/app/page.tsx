@@ -38,18 +38,21 @@ export default function HomePage() {
   const { scrollY } = useScroll()
   
   // Refined Docking Search Bar
-  // Moved start position lower (480px) and adjust end position to align with navbar center
-  const searchY = useTransform(scrollY, [0, 400], [0, -464]) 
-  // Scale down slightly but keep it substantial
-  const searchScale = useTransform(scrollY, [0, 400], [1, 0.9])
-  // Width transitions from full width (max-2xl) to fixed 500px
+  // Move from hero position (480px) to navbar center
+  const searchY = useTransform(scrollY, [0, 400], [0, -468]) 
+  
+  // Width transitions: Full width -> Fixed 500px
   const searchWidth = useTransform(scrollY, [0, 400], ['100%', '500px'])
   
-  // Smooth spring physics for the search bar
-  const springConfig = { stiffness: 120, damping: 20, mass: 0.5 }
+  // Height transitions: Tall hero input (64px) -> Sleek navbar input (44px)
+  const searchHeight = useTransform(scrollY, [0, 400], ['64px', '44px'])
+  const searchPadding = useTransform(scrollY, [0, 400], ['1rem', '0.5rem'])
+  
+  // Smooth physics
+  const springConfig = { stiffness: 150, damping: 25, mass: 0.8 }
   const smoothSearchY = useSpring(searchY, springConfig)
-  const smoothSearchScale = useSpring(searchScale, springConfig)
   const smoothSearchWidth = useSpring(searchWidth, springConfig)
+  const smoothSearchHeight = useSpring(searchHeight, springConfig)
 
   // Hero Content Fade
   const heroOpacity = useTransform(scrollY, [0, 200], [1, 0])
@@ -63,9 +66,9 @@ export default function HomePage() {
         <Hero3D />
       </div>
 
-      {/* Navbar Container - with solid backing to prevent overlap */}
+      {/* Navbar Container */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-4 pointer-events-none transition-all duration-500">
-        {/* Navbar Backdrop - fades in on scroll */}
+        {/* Navbar Backdrop */}
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-b border-white/5 opacity-0 data-[scrolled=true]:opacity-100 transition-opacity duration-500" />
 
         {/* Brand */}
@@ -83,21 +86,22 @@ export default function HomePage() {
         <motion.div 
           style={{ 
             y: smoothSearchY, 
-            scale: smoothSearchScale,
             width: smoothSearchWidth,
+            height: smoothSearchHeight,
           }}
-          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto w-full max-w-2xl px-4 md:px-0 origin-center z-50"
+          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto w-full max-w-2xl px-4 md:px-0 origin-center z-50 flex items-center justify-center"
         >
-          <div className="relative group">
+          <div className="relative group w-full h-full">
             <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
               <Search className="h-4 w-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
             </div>
-            <input 
+            <motion.input 
               type="text"
               placeholder="Find open source repos..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/80 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full py-3 pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none h-[50px]"
+              style={{ height: smoothSearchHeight, padding: searchPadding }}
+              className="w-full h-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/80 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
             />
           </div>
         </motion.div>
