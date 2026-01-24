@@ -113,6 +113,12 @@ export function BlueprintGraph({ data }: BlueprintGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // 3. Sync internal state with props
+  React.useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
+
   if (data.nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-white/50 italic bg-white/[0.02] rounded-2xl border border-dashed border-white/10">

@@ -2,12 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as d3 from 'd3-force'
+import { GraphNode, GraphLink } from '@/hooks/useGraphData'
 
-interface Node extends d3.SimulationNodeDatum {
-  id: string
-  label: string
-  type?: string
-}
+interface Node extends d3.SimulationNodeDatum, GraphNode {}
 
 interface Edge extends d3.SimulationLinkDatum<Node> {
   source: string
@@ -15,8 +12,8 @@ interface Edge extends d3.SimulationLinkDatum<Node> {
 }
 
 interface DependencyGraph2DProps {
-  nodes: { id: string; label: string; type?: string }[]
-  edges: { source: string; target: string }[]
+  nodes: GraphNode[]
+  edges: GraphLink[]
   onNodeClick?: (nodeId: string) => void
 }
 
@@ -80,19 +77,6 @@ export function DependencyGraph2D({
       simulation.stop()
     }
   }, [initialNodes, initialEdges, dimensions])
-
-  // Color mapping for node types
-  const getNodeColor = (type?: string) => {
-    const colors: Record<string, string> = {
-      root: '#a2e435',      // lime
-      module: '#3b82f6',    // blue
-      package: '#f59e0b',   // amber
-      file: '#8b5cf6',      // purple
-      external: '#6b7280',  // gray
-      default: '#10b981',   // green
-    }
-    return colors[type || 'default'] || colors.default
-  }
 
   // Draw the graph
   useEffect(() => {
@@ -162,7 +146,7 @@ export function DependencyGraph2D({
       // Node circle
       ctx.beginPath()
       ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI)
-      ctx.fillStyle = getNodeColor(node.type)
+      ctx.fillStyle = node.color
       ctx.fill()
       
       if (isHovered) {
@@ -175,7 +159,7 @@ export function DependencyGraph2D({
 
       // Improved Label Rendering
       if (scale > 0.4 || isHovered) {
-        const label = node.label.length > 20 && !isHovered ? node.label.slice(0, 17) + '...' : node.label
+        const label = node.name.length > 20 && !isHovered ? node.name.slice(0, 17) + '...' : node.name
         ctx.font = `${isHovered ? 'bold ' : ''}${Math.max(10, 12 / scale)}px sans-serif`
         const textWidth = ctx.measureText(label).width
         const padding = 4 / scale

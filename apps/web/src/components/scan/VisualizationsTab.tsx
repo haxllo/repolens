@@ -8,6 +8,7 @@ import { BlueprintGraph } from "@/components/graphs/BlueprintGraph";
 import { useState } from "react";
 import { Grid3X3, BarChart3, GitBranch, Box, Layers, Map as MapIcon, Globe } from "lucide-react";
 import { useBlueprintData } from "@/hooks/useBlueprintData";
+import { useGraphData } from "@/hooks/useGraphData";
 
 interface VisualizationsTabProps {
   scanData: any;
@@ -18,11 +19,7 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   const [graphMode, setGraphMode] = useState<'blueprint' | '3d' | '2d'>('blueprint');
   
   if (!scanData) {
-    return (
-      <div className="flex items-center justify-center h-64 glass rounded-2xl">
-        <p className="text-white/50 text-sm italic">Waiting for analysis results...</p>
-      </div>
-    );
+// ... existing null check ...
   }
 
   // Access files from AST data
@@ -40,21 +37,7 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
   }
 
   const dependencies = scanData?.dependencies || {};
-
-  
-  const graphData = {
-    nodes: (Array.isArray(dependencies.graph?.nodes) ? dependencies.graph.nodes : []).map((n: any) => ({
-      ...n,
-      name: n.label || n.id || 'Unknown',
-      size: n.size || 10,
-      color: n.type === 'root' ? '#a2e435' : '#3b82f6'
-    })),
-    links: (Array.isArray(dependencies.graph?.edges) ? dependencies.graph.edges : []).map((e: any) => ({
-      source: e.source,
-      target: e.target,
-    })),
-  };
-
+  const graphData = useGraphData(dependencies);
   const blueprintData = useBlueprintData(graphData);
 
   const tabs = [
