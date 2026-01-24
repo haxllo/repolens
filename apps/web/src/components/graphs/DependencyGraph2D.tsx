@@ -57,7 +57,8 @@ export function DependencyGraph2D({
 
   // Initialize simulation
   useEffect(() => {
-    if (initialNodes.length === 0 || dimensions.width === 0) return
+    if (initialNodes.length === 0) return
+    console.log('DependencyGraph2D: Initializing simulation', { width: dimensions.width, height: dimensions.height });
 
     const nodesData: Node[] = initialNodes.map(n => ({ ...n }))
     const linksData: Edge[] = initialEdges.map(e => ({ ...e }))
@@ -65,7 +66,7 @@ export function DependencyGraph2D({
     const simulation = d3.forceSimulation<Node>(nodesData)
       .force('link', d3.forceLink<Node, Edge>(linksData).id(d => d.id).distance(100))
       .force('charge', d3.forceManyBody().strength(-300))
-      .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
+      .force('center', d3.forceCenter(dimensions.width / 2 || 400, dimensions.height / 2 || 300))
       .force('collision', d3.forceCollide().radius(40))
 
     simulation.on('tick', () => {

@@ -99,7 +99,7 @@ export function VisualizationsTab({ scanData }: VisualizationsTabProps) {
               </div>
             </div>
             
-            <div className="flex-1 min-h-[600px]">
+            <div className="flex-1 min-h-[650px] h-[650px] relative mt-4">
               {graphMode === 'blueprint' && <BlueprintGraph data={blueprintData} />}
               {graphMode === '3d' && <DependencyGraph3D data={graphData} />}
               {graphMode === '2d' && <DependencyGraph2D nodes={graphData.nodes} edges={graphData.links} />}
