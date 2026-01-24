@@ -1,4 +1,4 @@
-import { PrismaClient } from '@repolens/database'
+import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
   return new PrismaClient({

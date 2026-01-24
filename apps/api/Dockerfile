@@ -14,7 +14,8 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm ci --ignore-scripts
 
 COPY --from=builder /app/out/full/ .
-RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
+# Generate Prisma Client using the root schema as a fallback
+RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma || npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build --filter=@repolens/api
 
 FROM base AS runner
