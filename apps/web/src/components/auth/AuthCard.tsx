@@ -27,7 +27,7 @@ export function AuthCard() {
         callbackURL: '/dashboard'
       })
     } catch (error) {
-      toast.error('GitHub sign in failed')
+      toast.error('GitHub authentication failed')
     }
   }
 
@@ -37,7 +37,7 @@ export function AuthCard() {
 
     try {
       if (isSignUp) {
-        const result = await authClient.signUp.email({
+        await authClient.signUp.email({
           email,
           password,
           name,
@@ -45,15 +45,13 @@ export function AuthCard() {
           callbackURL: '/dashboard',
         }, {
           onSuccess: () => {
-            toast.success('Account created successfully!')
+            toast.success('Access granted. Redirecting...')
             router.push('/dashboard')
           },
           onError: (ctx) => {
-            console.error('Signup Error Context:', ctx);
-            toast.error(ctx.error.message || 'Signup failed. Please try a different username or email.')
+            toast.error(ctx.error.message || 'Signup failed')
           }
         })
-        console.log('Signup result:', result);
       } else {
         await authClient.signIn.email({
           email,
@@ -62,11 +60,11 @@ export function AuthCard() {
           callbackURL: '/dashboard',
         }, {
           onSuccess: () => {
-            toast.success('Signed in successfully!')
+            toast.success('Identity verified.')
             router.push('/dashboard')
           },
           onError: (ctx) => {
-            toast.error(ctx.error.message || 'Sign in failed')
+            toast.error(ctx.error.message || 'Verification failed')
           }
         })
       }
@@ -78,67 +76,62 @@ export function AuthCard() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-white">
-          {isSignUp ? 'Create an account' : 'Welcome back'}
+    <div className="w-full space-y-8">
+      <div className="space-y-2 text-left">
+        <h1 className="text-xl font-black uppercase tracking-[0.2em] text-white">
+          {isSignUp ? 'New Registration' : 'Verified Access'}
         </h1>
-        <p className="text-sm text-white/50">
+        <p className="text-[10px] uppercase font-bold tracking-widest text-white/30">
           {isSignUp 
-            ? 'Enter your details to get started' 
-            : 'Enter your credentials to access your dashboard'}
+            ? 'Initialize user profile' 
+            : 'Enter credentials for index access'}
         </p>
       </div>
 
-      <form onSubmit={handleEmailAuth} className="space-y-4">
+      <form onSubmit={handleEmailAuth} className="space-y-6">
         {isSignUp && (
-          <>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Full Name</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="Required"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={isSignUp}
-                className="bg-white/5 border-white/10"
+                className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Username</Label>
               <Input
                 id="username"
-                placeholder="johndoe"
+                placeholder="ID"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required={isSignUp}
-                className="bg-white/5 border-white/10"
+                className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
               />
             </div>
-          </>
+          </div>
         )}
         
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Email Identifier</Label>
           <Input
             id="email"
             type="email"
-            placeholder="name@example.com"
+            placeholder="node@archive.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-white/5 border-white/10"
+            className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
           />
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            {!isSignUp && (
-              <Button variant="link" className="px-0 font-normal text-xs text-lime-400 h-auto">
-                Forgot password?
-              </Button>
-            )}
+            <Label htmlFor="password" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Secret Key</Label>
           </div>
           <div className="relative">
             <Input
@@ -147,52 +140,37 @@ export function AuthCard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-white/5 border-white/10 pr-10"
+              className="bg-black border-white/10 rounded-none h-12 text-xs pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             </button>
           </div>
         </div>
 
-        {!isSignUp && (
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="remember"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-white/10 bg-white/5 text-lime-400 focus:ring-lime-400"
-            />
-            <Label htmlFor="remember" className="text-xs font-normal text-white/60 cursor-pointer">
-              Remember me for 30 days
-            </Label>
-          </div>
-        )}
-
         <Button 
           type="submit" 
           disabled={loading}
-          className="w-full bg-lime-400 hover:bg-lime-500 text-black font-bold h-11"
+          className="w-full bg-white hover:bg-lime-400 text-black font-black uppercase text-[11px] tracking-[0.3em] h-14 rounded-none transition-all active:scale-[0.98]"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            isSignUp ? 'Sign Up' : 'Sign In'
+            isSignUp ? 'Execute Signup' : 'Authenticate'
           )}
         </Button>
       </form>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/10" />
+          <span className="w-full border-t border-white/5" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[#0a0a0a] px-2 text-white/30">Or continue with</span>
+        <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.4em]">
+          <span className="bg-black px-4 text-white/20 tracking-[0.5em]">OR</span>
         </div>
       </div>
 
@@ -200,22 +178,19 @@ export function AuthCard() {
         type="button"
         variant="outline"
         onClick={handleGitHubSignIn}
-        className="w-full border-white/10 bg-white/5 hover:bg-white/10 text-white h-11"
+        className="w-full border-white/10 bg-white/5 hover:bg-white/10 text-white h-14 rounded-none text-[10px] font-black uppercase tracking-[0.3em] transition-all"
       >
-        <Github className="mr-2 h-4 w-4" />
-        GitHub
+        <Github className="mr-3 h-4 w-4" />
+        External GitHub Auth
       </Button>
 
-      <div className="text-center text-sm">
-        <p className="text-white/50">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="font-semibold text-lime-400 hover:underline"
-          >
-            {isSignUp ? 'Sign In' : 'Create one'}
-          </button>
-        </p>
+      <div className="text-center pt-4">
+        <button
+          onClick={() => setIsSignUp(!isSignUp)}
+          className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-lime-400 transition-colors"
+        >
+          {isSignUp ? 'Existing Identity? Login' : 'Request New Identity'}
+        </button>
       </div>
     </div>
   )

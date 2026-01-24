@@ -2,17 +2,16 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, LogIn, Sparkles } from 'lucide-react'
+import { ArrowRight, LogIn } from 'lucide-react'
 
 export function HeaderSignIn() {
   return (
     <Link href="/auth/signin">
-      <Button 
-        className="bg-white hover:bg-white/90 text-black font-semibold rounded-full px-6"
+      <button 
+        className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
       >
-        <LogIn className="mr-2 h-4 w-4" />
         Sign in
-      </Button>
+      </button>
     </Link>
   )
 }
@@ -21,12 +20,10 @@ export function HeroSignIn() {
   return (
     <Link href="/auth/signin">
       <button
-        className="group relative h-12 px-8 text-base font-semibold overflow-hidden bg-indigo-600 text-white transition-all duration-300 hover:bg-indigo-500 rounded-full flex items-center gap-2 shadow-lg shadow-indigo-500/30"
+        className="group relative h-16 px-12 text-[11px] font-black uppercase tracking-[0.4em] overflow-hidden bg-white text-black transition-all duration-500 hover:bg-lime-400 active:scale-95 flex items-center gap-4"
       >
-        <span className="relative flex items-center gap-2">
-          Get Started Free
-          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-        </span>
+        Execute System Sync
+        <ArrowRight className="h-4 w-4 group-hover:translate-x-2 transition-transform" />
       </button>
     </Link>
   )

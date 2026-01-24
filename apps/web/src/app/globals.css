@@ -4,36 +4,36 @@
 
 @layer base {
   :root {
-    /* Premium Cosmic Cobalt Theme */
-    --background: 230 35% 7%;
-    --foreground: 210 40% 98%;
+    /* Premium Monotone Theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
     
-    --card: 230 30% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 2%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 230 30% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 2%;
+    --popover-foreground: 0 0% 98%;
     
-    --primary: 226 70% 55%; /* Electric Indigo */
-    --primary-foreground: 210 40% 98%;
+    --primary: 84 81% 59%; /* Sharp Lime #a3e635 */
+    --primary-foreground: 0 0% 0%;
     
-    --secondary: 230 25% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 230 25% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 40%;
     
-    --accent: 226 70% 55%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 84 81% 59%;
+    --accent-foreground: 0 0% 0%;
     
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 230 25% 18%;
-    --input: 230 25% 18%;
-    --ring: 226 70% 55%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 84 81% 59%;
     
-    --radius: 0.75rem;
+    --radius: 0rem; /* Sharp edges for robustness */
   }
 }
 
@@ -43,37 +43,39 @@
   }
   
   html {
-    @apply antialiased;
+    @apply antialiased bg-black;
     scroll-behavior: smooth;
   }
   
   body {
-    @apply bg-background text-foreground;
+    @apply bg-black text-foreground selection:bg-primary/30;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  /* Robust Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-black;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 hover:bg-primary/50 transition-colors;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.05];
+  .text-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   
-  .glass-card {
-    @apply bg-gradient-to-br from-white/[0.05] to-transparent backdrop-blur-2xl border border-white/[0.08] shadow-xl;
+  .border-subtle {
+    @apply border border-white/[0.05];
   }
-  
-  .glass-hover {
-    @apply hover:bg-white/[0.08] hover:border-white/[0.1] transition-all duration-300;
-  }
-  
-  .text-glow {
-    text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
-  }
-  
-  .glow {
-    box-shadow: 0 0 50px -10px rgba(79, 70, 229, 0.3);
-  }
-  
-  .perspective-1000 {
-    perspective: 1000px;
+
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
   }
 }

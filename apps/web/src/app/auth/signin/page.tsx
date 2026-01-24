@@ -3,7 +3,7 @@
 import { authClient } from '@/lib/auth-client'
 import { redirect, useSearchParams } from 'next/navigation'
 import { AuthCard } from '@/components/auth/AuthCard'
-import { Zap, AlertCircle } from 'lucide-react'
+import { Layers, AlertCircle, Loader2 } from 'lucide-react'
 import { useEffect, Suspense } from 'react'
 
 function SignInContent() {
@@ -18,52 +18,55 @@ function SignInContent() {
   }, [session])
 
   const getErrorMessage = (error: string) => {
-    return error ? 'Authentication failed. Please try again.' : null;
+    return error ? 'Authentication protocols failed. Verify credentials and retry.' : null;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-grid-pattern bg-[size:60px_60px] opacity-30" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-lime-400/5 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden selection:bg-lime-400/30">
+      {/* Background Grids */}
+      <div className="absolute inset-0 bg-grid-pattern bg-[size:80px_80px] opacity-[0.03]" />
       
-      <div className="relative z-10 max-w-md w-full space-y-8 p-8">
+      <div className="relative z-10 max-w-sm w-full space-y-12 px-6">
         <div className="text-center">
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-lime-400 flex items-center justify-center">
-              <Zap className="h-7 w-7 text-black" />
+          <div className="flex items-center justify-center gap-4 mb-16">
+            <div className="w-10 h-10 bg-white flex items-center justify-center">
+              <Layers className="h-6 w-6 text-black" />
             </div>
+            <span className="font-black text-2xl uppercase tracking-[0.2em] text-white">RepoLens</span>
           </div>
+          <h2 className="text-sm font-black uppercase tracking-[0.4em] text-white/30 mb-2">Access Portal</h2>
+          <p className="text-[11px] font-medium text-white/20 uppercase tracking-[0.2em]">Secure Architectural Index</p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start gap-4 p-6 bg-black border border-red-500/20 text-red-500 animate-in fade-in slide-in-from-top-4 duration-500">
             <AlertCircle className="h-5 w-5 shrink-0" />
-            <div className="text-sm font-medium">
-              <p className="font-bold mb-0.5">Authentication Error</p>
-              <p className="opacity-80">{getErrorMessage(error)}</p>
+            <div className="text-[11px] font-bold uppercase tracking-widest leading-relaxed">
+              <p className="mb-1">Protocol Error</p>
+              <p className="opacity-60">{getErrorMessage(error)}</p>
             </div>
           </div>
         )}
 
-        <div className="glass rounded-3xl border border-white/10 p-1">
-          <div className="bg-[#0a0a0a] rounded-[22px] p-8">
-            <AuthCard />
-          </div>
+        <div className="bg-black border border-white/5 p-10 shadow-2xl relative">
+          <div className="absolute -top-px left-8 right-8 h-px bg-gradient-to-r from-transparent via-lime-400/50 to-transparent" />
+          <AuthCard />
         </div>
 
-        <p className="text-center text-[10px] text-white/20 uppercase tracking-widest">
-          Secured by Better Auth
-        </p>
+        <div className="flex flex-col items-center gap-4">
+            <p className="text-center text-[9px] text-white/10 uppercase font-black tracking-[0.5em]">
+              Encrypted Auth v2.0
+            </p>
+            <div className="w-px h-12 bg-gradient-to-b from-white/10 to-transparent" />
+        </div>
       </div>
     </div>
   )
@@ -72,8 +75,8 @@ function SignInContent() {
 export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     }>
       <SignInContent />

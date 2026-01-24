@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import OverviewTab from '@/components/scan/OverviewTab'
 import { 
@@ -14,9 +13,13 @@ import {
   Loader2, 
   AlertCircle, 
   Clock3,
-  LayoutDashboard
+  BookOpen,
+  ChevronRight,
+  Maximize2,
+  Box
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
 
 interface ScanData {
   scanId: string
@@ -36,24 +39,19 @@ export default function ScanDetailPage() {
   const [scan, setScan] = useState<ScanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeView, setActiveView] = useState<'archive' | 'spatial'>('archive')
 
   const fetchScanData = async () => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/scan/${scanId}`
       )
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch scan data')
-      }
-
+      if (!response.ok) throw new Error('System query failed')
       const data = await response.json()
       setScan(data)
       setError('')
     } catch (err: any) {
-      const msg = err.message || 'Failed to fetch scan data'
-      setError(msg)
-      toast.error('Error loading scan', { description: msg })
+      setError(err.message || 'Connection interrupted')
     } finally {
       setLoading(false)
     }
@@ -61,47 +59,20 @@ export default function ScanDetailPage() {
 
   useEffect(() => {
     fetchScanData()
-
-    // Poll every 3 seconds if scan is still processing
     const interval = setInterval(() => {
       if (scan?.status === 'queued' || scan?.status === 'processing') {
         fetchScanData()
       }
     }, 3000)
-
     return () => clearInterval(interval)
   }, [scanId, scan?.status])
 
   const getStatusIcon = (status: string) => {
-    const statusLower = status?.toLowerCase() || ''
-    switch (statusLower) {
-      case 'completed':
-        return <CheckCircle2 className="h-5 w-5 text-lime-400" />
-      case 'processing':
-        return <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-      case 'queued':
-        return <Clock3 className="h-5 w-5 text-yellow-400" />
-      case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-400" />
-      default:
-        return <Clock3 className="h-5 w-5 text-white/50" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    const statusLower = status?.toLowerCase() || ''
-    switch (statusLower) {
-      case 'completed':
-        return 'text-lime-400 bg-lime-400/10 border-lime-400/20'
-      case 'processing':
-        return 'text-blue-400 bg-blue-400/10 border-blue-400/20'
-      case 'queued':
-        return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
-      case 'failed':
-        return 'text-red-400 bg-red-400/10 border-red-400/20'
-      default:
-        return 'text-white/50 bg-white/5 border-white/10'
-    }
+    const s = status?.toLowerCase() || ''
+    if (s === 'completed') return <CheckCircle2 className="h-4 w-4 text-lime-400" />
+    if (s === 'processing' || s === 'queued') return <Loader2 className="h-4 w-4 text-white/40 animate-spin" />
+    if (s === 'failed') return <AlertCircle className="h-4 w-4 text-red-500" />
+    return <Clock3 className="h-4 w-4 text-white/20" />
   }
 
   const getRepoName = (url: string) => {
@@ -112,135 +83,124 @@ export default function ScanDetailPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-5 w-32 bg-white/10" /> {/* Back link */}
-        <div className="glass rounded-2xl p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div className="space-y-2 w-1/2">
-              <Skeleton className="h-8 w-3/4 bg-white/10" /> {/* Title */}
-              <div className="flex gap-4">
-                <Skeleton className="h-4 w-24 bg-white/5" /> {/* Branch */}
-                <Skeleton className="h-4 w-20 bg-white/5" /> {/* ID */}
-              </div>
-            </div>
-            <Skeleton className="h-10 w-32 bg-white/5 rounded-xl" /> {/* Status Badge */}
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-6 h-64">
-           <Skeleton className="h-full w-full bg-white/5" />
-        </div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="space-y-12">
+      <div className="h-8 w-48 bg-white/5 animate-pulse" />
+      <div className="h-64 bg-white/5 animate-pulse border border-white/5" />
+    </div>
+  )
 
-  if (error || !scan) {
-    return (
-      <div className="space-y-6">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Link>
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3 text-red-400">
-            <AlertCircle className="h-5 w-5" />
-            <span>{error || 'Scan not found'}</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  if (error || !scan) return (
+    <div className="py-24 text-center">
+      <AlertCircle className="w-12 h-12 text-red-500/20 mx-auto mb-6" />
+      <h2 className="text-xl font-black uppercase tracking-widest text-white mb-4">Archive Not Found</h2>
+      <Link href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.3em] text-lime-400">Return to Console</Link>
+    </div>
+  )
 
   const isProcessing = scan.status === 'queued' || scan.status === 'processing'
   const isCompleted = scan.status === 'completed'
   const isFailed = scan.status === 'failed'
 
   return (
-    <div className="space-y-6">
-      {/* Back Link */}
-      <Link 
-        href="/dashboard" 
-        className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
-      </Link>
-
-      {/* Header */}
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{getRepoName(scan.repoUrl)}</h1>
-            <div className="flex items-center gap-4 text-sm text-white/50">
-              <span className="flex items-center gap-1.5">
-                <GitBranch className="h-4 w-4" />
-                {scan.branch}
-              </span>
-              <span className="font-mono text-xs">{scan.scanId.slice(0, 8)}</span>
+    <div className="space-y-12 max-w-6xl mx-auto">
+      {/* Header Info */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-white/5 pb-12">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Console</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white/40">Archive Details</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-white leading-none">
+            {getRepoName(scan.repoUrl).split('/').pop()}
+          </h1>
+          <div className="flex items-center gap-6 text-[10px] font-mono uppercase tracking-widest text-white/30">
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-3 w-3" />
+              {scan.branch}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-white/10">IDX:</span>
+              {scan.scanId.slice(0, 12)}
             </div>
           </div>
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border ${getStatusColor(scan.status)}`}>
-            {getStatusIcon(scan.status)}
-            {scan.status.charAt(0).toUpperCase() + scan.status.slice(1)}
-          </div>
+        </div>
+
+        <div className="flex flex-col md:items-end gap-6">
+            {isCompleted && (
+                <div className="flex bg-black border border-white/10 p-1">
+                    <button 
+                        onClick={() => setActiveView('archive')}
+                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'archive' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                    >
+                        <BookOpen className="w-3 h-3" />
+                        Archive View
+                    </button>
+                    <button 
+                        onClick={() => setActiveView('spatial')}
+                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'spatial' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                    >
+                        <Box className="w-3 h-3" />
+                        Spatial Map
+                    </button>
+                </div>
+            )}
+            <div className={`flex items-center gap-3 px-6 py-3 border border-white/10 bg-black`}>
+                {getStatusIcon(scan.status)}
+                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+                    {scan.status}
+                </span>
+            </div>
         </div>
       </div>
 
-      {/* Processing Status */}
+      {/* Processing State */}
       {isProcessing && (
-        <div className="glass rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-400/10 flex items-center justify-center">
-              <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-            </div>
-            <div>
-              <h2 className="font-semibold">Analysis in Progress</h2>
-              <p className="text-sm text-white/50">Your repository is being analyzed...</p>
-            </div>
+        <div className="py-32 border border-white/5 bg-black flex flex-col items-center justify-center text-center space-y-8">
+          <div className="relative">
+             <Loader2 className="w-12 h-12 text-lime-400 animate-spin" />
+             <div className="absolute inset-0 blur-xl bg-lime-400/20 animate-pulse" />
           </div>
-          <div className="space-y-2">
-            <Progress value={scan.progress || 0} className="h-2 bg-white/5" />
-            <p className="text-sm text-white/40">
-              {scan.progress ? `${scan.progress}% complete` : 'Starting analysis...'}
-            </p>
+          <div className="space-y-3">
+            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-white">Neural Indexing</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Parsing architectural constructs...</p>
+          </div>
+          <div className="w-64 h-px bg-white/5 relative">
+             <motion.div 
+                className="absolute inset-y-0 left-0 bg-lime-400 shadow-[0_0_10px_rgba(162,228,53,0.5)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${scan.progress || 30}%` }}
+             />
           </div>
         </div>
       )}
 
-      {/* Failed Status */}
+      {/* Failed State */}
       {isFailed && (
-        <div className="glass rounded-2xl p-6 border-red-500/20 bg-red-500/5">
-          <div className="flex items-center gap-3 text-red-400">
-            <AlertCircle className="h-5 w-5" />
-            <div>
-              <p className="font-medium">Analysis Failed</p>
-              <p className="text-sm text-red-400/70">{scan.error || 'Unknown error occurred'}</p>
-            </div>
+        <div className="p-12 border border-red-500/20 bg-black space-y-6">
+          <div className="flex items-center gap-4 text-red-500">
+            <AlertCircle className="w-6 h-6" />
+            <span className="text-sm font-black uppercase tracking-[0.3em]">Protocol Aborted</span>
           </div>
+          <p className="font-mono text-xs text-red-400/60 leading-relaxed uppercase tracking-widest bg-red-500/5 p-6 border border-red-500/10">
+            ERROR_LOG: {scan.error || 'System validation failed'}
+          </p>
+          <Link href="/dashboard" className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors">
+            Re-initialize Process
+          </Link>
         </div>
       )}
 
-      {/* Results Tabs */}
+      {/* Completed Content */}
       {isCompleted && scan.results && (
-        <Tabs defaultValue="codewiki" className="w-full">
-          <TabsList className="glass rounded-xl p-1 h-auto flex-wrap gap-1">
-            <TabsTrigger 
-              value="codewiki" 
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              CodeWiki
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="codewiki" className="mt-6">
-            <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
-          </TabsContent>
-        </Tabs>
+        <div className="animate-in fade-in duration-1000">
+           {activeView === 'archive' ? (
+               <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
+           ) : (
+               <BlueprintCanvas data={scan.results} />
+           )}
+        </div>
       )}
     </div>
   )

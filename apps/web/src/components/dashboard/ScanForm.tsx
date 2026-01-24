@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Github, Loader2, ArrowRight } from 'lucide-react'
+import { Github, Loader2, Command } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function ScanForm({ userId }: { userId?: string }) {
@@ -38,20 +38,19 @@ export default function ScanForm({ userId }: { userId?: string }) {
       }
 
       const data = await response.json()
-      toast.success('Scan created successfully!', {
-        description: 'Redirecting to analysis dashboard...',
+      toast.success('Protocol initiated.', {
+        description: 'Synchronizing with remote source...',
       })
       
       setRepoUrl('')
       setBranch('main')
 
-      // Redirect to scan detail page
       setTimeout(() => {
         router.push(`/dashboard/${data.scanId}`)
       }, 1000)
     } catch (err: any) {
-      toast.error('Failed to create scan', {
-        description: err.message || 'Please check the URL and try again.',
+      toast.error('System failure', {
+        description: err.message || 'Verification of remote source failed.',
       })
     } finally {
       setLoading(false)
@@ -59,34 +58,36 @@ export default function ScanForm({ userId }: { userId?: string }) {
   }
 
   return (
-    <div className="glass rounded-2xl p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center">
-          <Github className="h-5 w-5 text-lime-400" />
+    <div className="bg-black border border-white/10 p-10 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-white/5 pointer-events-none" />
+      
+      <div className="flex items-center gap-4 mb-12">
+        <div className="w-10 h-10 border border-white/10 flex items-center justify-center">
+          <Command className="h-5 w-5 text-white/40" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Analyze Repository</h2>
-          <p className="text-sm text-white/50">Enter a GitHub URL to start</p>
+          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white">Initialize Archive</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20 mt-1">Remote Index Sync</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="repoUrl" className="text-sm text-white/70">Repository URL</Label>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-3">
+          <Label htmlFor="repoUrl" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Source URL</Label>
           <Input
             id="repoUrl"
             type="url"
-            placeholder="https://github.com/owner/repo"
+            placeholder="https://github.com/archive/repo"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             required
             disabled={loading}
-            className="bg-white/[0.03] border-white/10 focus:border-lime-400/50 focus:ring-lime-400/20 placeholder:text-white/30"
+            className="bg-black border-white/10 rounded-none h-14 text-xs font-mono placeholder:text-white/10 focus:border-lime-400/50 transition-colors"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="branch" className="text-sm text-white/70">Branch</Label>
+        <div className="space-y-3">
+          <Label htmlFor="branch" className="text-[9px] uppercase font-black tracking-widest text-white/40 ml-1">Archive Branch</Label>
           <Input
             id="branch"
             type="text"
@@ -94,27 +95,24 @@ export default function ScanForm({ userId }: { userId?: string }) {
             value={branch}
             onChange={(e) => setBranch(e.target.value)}
             disabled={loading}
-            className="bg-white/[0.03] border-white/10 focus:border-lime-400/50 focus:ring-lime-400/20 placeholder:text-white/30"
+            className="bg-black border-white/10 rounded-none h-14 text-xs font-mono placeholder:text-white/10 focus:border-lime-400/50 transition-colors"
           />
         </div>
 
-        <Button 
+        <button 
           type="submit" 
-          className="w-full bg-lime-400 hover:bg-lime-500 text-black font-semibold h-11" 
           disabled={loading}
+          className="w-full h-16 bg-white hover:bg-lime-400 text-black text-[11px] font-black uppercase tracking-[0.4em] transition-all disabled:opacity-30 active:scale-[0.98]"
         >
           {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
+            <div className="flex items-center justify-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </div>
           ) : (
-            <>
-              Analyze Repository
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
+            'Run Diagnostic'
           )}
-        </Button>
+        </button>
       </form>
     </div>
   )

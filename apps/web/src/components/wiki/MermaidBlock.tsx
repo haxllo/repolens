@@ -2,20 +2,26 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 mermaid.initialize({
   startOnLoad: true,
-  theme: 'dark',
+  theme: 'base',
   securityLevel: 'loose',
-  fontFamily: 'inherit',
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   themeVariables: {
-    primaryColor: '#a3e635',
-    primaryTextColor: '#fff',
-    primaryBorderColor: '#a3e635',
-    lineColor: '#3f3f46',
-    secondaryColor: '#18181b',
-    tertiaryColor: '#09090b'
+    primaryColor: '#000000',
+    primaryTextColor: '#ffffff',
+    primaryBorderColor: '#ffffff',
+    lineColor: '#ffffff',
+    secondaryColor: '#000000',
+    tertiaryColor: '#000000',
+    mainBkg: '#000000',
+    nodeBorder: '#ffffff',
+    clusterBkg: '#000000',
+    clusterBorder: '#ffffff',
+    edgeLabelBackground: '#000000',
+    fontFamily: 'ui-monospace'
   }
 });
 
@@ -40,8 +46,7 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
         const { svg } = await mermaid.render(id, chart);
         setSvg(svg);
       } catch (err) {
-        console.error('Mermaid render error:', err);
-        setError('Failed to render diagram. Check Mermaid syntax.');
+        setError('Diagram Protocol Error');
       } finally {
         setIsRendering(false);
       }
@@ -51,33 +56,29 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
   }, [chart]);
 
   return (
-    <div className="my-12 relative group">
-      <div className="absolute -inset-4 bg-lime-400/5 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="relative bg-[#050505] border border-white/5 rounded-3xl p-8 overflow-hidden min-h-[200px] flex items-center justify-center">
+    <div className="my-16 border-y border-white/5 bg-black py-12 flex flex-col items-center justify-center">
         {isRendering && (
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 text-lime-400 animate-spin" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">Rendering Diagram</span>
+          <div className="flex items-center gap-4 text-white/20">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Rendering Abstract</span>
           </div>
         )}
 
         {error ? (
-          <div className="flex flex-col items-center gap-3 text-red-400/50">
-            <AlertCircle className="w-6 h-6" />
-            <span className="text-[10px] font-medium">{error}</span>
+          <div className="flex items-center gap-4 text-red-500/40">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">{error}</span>
           </div>
         ) : (
           <div 
             ref={elementRef} 
-            className="w-full h-full flex justify-center mermaid-svg-container"
+            className="w-full flex justify-center invert"
             dangerouslySetInnerHTML={{ __html: svg }} 
           />
         )}
-      </div>
       
-      {/* Label */}
-      <div className="mt-4 flex justify-center">
-         <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/10">Architectural Flowchart</span>
+      <div className="mt-12">
+         <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/10">Architectural Schematic</span>
       </div>
     </div>
   );

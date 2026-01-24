@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth-client'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Star, GitBranch, Clock, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
+import { Star, GitBranch, Clock, Trash2, ExternalLink, AlertCircle, Bookmark } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 
 interface FavoriteRepository {
@@ -38,7 +37,7 @@ export default function FavoritesPage() {
       const data = await apiClient.get<FavoriteRepository[]>('/favorites')
       setFavorites(data)
     } catch (err) {
-      setError('Failed to load favorites')
+      setError('Failed to synchronize bookmarks.')
     } finally {
       setLoading(false)
     }
@@ -49,138 +48,95 @@ export default function FavoritesPage() {
       await apiClient.delete(`/favorites/${repositoryId}`)
       setFavorites(favorites.filter(f => f.repositoryId !== repositoryId))
     } catch (err) {
-      console.error('Failed to remove favorite:', err)
+      console.error('Bookmark removal failed:', err)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffDays < 1) return 'Today'
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
-  }
-
-  if (!session) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-white/50">Please sign in to view your favorites</p>
-      </div>
-    )
-  }
+  if (!session) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-16 max-w-5xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Favorites</h1>
-        <p className="text-white/50 mt-2">
-          {favorites.length > 0 ? `${favorites.length} starred repositories` : 'Your starred repositories for quick access'}
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-white/5 pb-12">
+        <div className="space-y-4">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Saved Constructs</h2>
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white leading-none">Bookmarked Archives</h1>
+          <p className="text-[10px] font-mono text-white/30 uppercase tracking-widest tabular-nums">
+            Total Saved: {favorites.length}
+          </p>
+        </div>
       </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="glass rounded-2xl p-6">
-              <Skeleton className="h-6 w-3/4 bg-white/10 mb-3" />
-              <Skeleton className="h-4 w-1/2 bg-white/5 mb-2" />
-              <Skeleton className="h-4 w-2/3 bg-white/5" />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 border border-white/5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-black p-12 h-48 animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="glass rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-red-400" />
-          </div>
-          <p className="text-white/50 mb-4">{error}</p>
-          <Button 
-            onClick={fetchFavorites} 
-            className="bg-lime-400 hover:bg-lime-500 text-black"
-          >
-            Retry
-          </Button>
+        <div className="p-12 border border-red-500/20 bg-black text-center space-y-6">
+          <AlertCircle className="w-10 h-10 text-red-500/20 mx-auto" />
+          <p className="text-xs font-mono text-red-400 uppercase tracking-widest">{error}</p>
+          <button onClick={fetchFavorites} className="text-[10px] font-black uppercase tracking-[0.3em] text-white hover:text-lime-400 transition-colors">
+            Reload Index
+          </button>
         </div>
       ) : favorites.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
-            <Star className="h-8 w-8 text-white/30" />
+        <div className="py-32 border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-6">
+          <Bookmark className="w-10 h-10 text-white/5" />
+          <div className="space-y-2">
+            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-white/20">No Favorites Synced</h3>
+            <Link href="/dashboard" className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-lime-400">
+              Explore Repositories
+            </Link>
           </div>
-          <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
-          <p className="text-white/40 mb-6">
-            Star repositories from your scans to keep track of them here
-          </p>
-          <Link href="/dashboard">
-            <Button className="bg-lime-400 hover:bg-lime-500 text-black">
-              Go to Dashboard
-            </Button>
-          </Link>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 border border-white/5">
           {favorites.map((fav) => (
-            <div key={fav.id} className="glass glass-hover rounded-2xl p-6 group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  <h3 className="font-semibold truncate">
-                    {fav.repository.owner}/{fav.repository.name}
+            <div key={fav.id} className="group bg-black p-10 hover:bg-white/[0.02] transition-all relative">
+              <div className="flex items-start justify-between mb-12">
+                <div className="flex items-center gap-4">
+                  <div className="w-2 h-2 rounded-full bg-lime-400" />
+                  <h3 className="text-2xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">
+                    {fav.repository.name}
                   </h3>
                 </div>
                 <button
                   onClick={() => removeFavorite(fav.repositoryId)}
-                  className="p-2 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
-                  title="Remove from favorites"
+                  className="text-white/20 hover:text-red-500 transition-colors"
+                  title="Erase Record"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               
-              <div className="space-y-2 text-sm text-white/40 mb-5">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Added {formatDate(fav.createdAt)}</span>
+              <div className="space-y-2 mb-12">
+                <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest flex items-center gap-2">
+                  <span className="text-white/10">OWNER:</span> {fav.repository.owner}
                 </div>
-                {fav.repository.latestScanAt && (
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="w-4 h-4" />
-                    <span>Last scan {formatDate(fav.repository.latestScanAt)}</span>
-                  </div>
-                )}
+                <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest flex items-center gap-2">
+                  <span className="text-white/10">ADDED:</span> {new Date(fav.createdAt).toLocaleDateString()}
+                </div>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex items-center gap-8 pt-8 border-t border-white/5">
                 {fav.repository.latestScanId ? (
-                  <Link href={`/dashboard/${fav.repository.latestScanId}`} className="flex-1">
-                    <Button 
-                      size="sm" 
-                      className="w-full bg-lime-400 hover:bg-lime-500 text-black font-medium"
-                    >
-                      View Scan
-                    </Button>
+                  <Link href={`/dashboard/${fav.repository.latestScanId}`} className="text-[10px] font-black uppercase tracking-[0.3em] text-white hover:text-lime-400 transition-colors">
+                    Access Archive
                   </Link>
                 ) : (
-                  <Link href="/dashboard" className="flex-1">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="w-full border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
-                    >
-                      New Scan
-                    </Button>
+                  <Link href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.3em] text-white hover:text-lime-400 transition-colors">
+                    Initialize Scan
                   </Link>
                 )}
                 <a
                   href={fav.repository.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors"
+                  className="text-white/20 hover:text-white transition-colors"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>

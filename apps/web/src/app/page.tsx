@@ -7,16 +7,12 @@ import {
   Search, 
   LayoutDashboard, 
   ChevronRight, 
-  MessageSquare,
-  Zap,
   Layers,
-  MousePointer2,
-  Moon,
-  BookOpen,
-  Code,
   Globe,
   ShieldCheck,
-  Cpu
+  Cpu,
+  Command,
+  ArrowRight
 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import { HeaderSignIn, HeroSignIn } from '@/components/HomeSignInButtons'
@@ -36,50 +32,39 @@ export default function HomePage() {
   const [searchValue, setSearchValue] = useState('')
   
   const { scrollY } = useScroll()
-
-  // Hero Content Fade
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
   const heroY = useTransform(scrollY, [0, 300], [0, 50])
 
   return (
-    <div className="min-h-screen bg-[#050508] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-black text-white selection:bg-lime-400/30 overflow-x-hidden font-sans">
       
       {/* 3D Background Layer */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-40 grayscale">
         <Hero3D />
       </div>
 
-      {/* Navbar Container */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-4 pointer-events-none transition-all duration-500">
-        {/* Navbar Backdrop */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-b border-white/5 opacity-0 data-[scrolled=true]:opacity-100 transition-opacity duration-500" />
-
-        {/* Brand */}
-        <div className="flex items-center gap-3 pointer-events-auto backdrop-blur-sm px-4 py-2 rounded-full border border-white/5 bg-black/20 relative z-10">
-          <div className="relative w-6 h-6 flex items-center justify-center">
-            <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-50" />
-            <Layers className="w-5 h-5 text-indigo-400 relative z-10" />
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-12 py-6 pointer-events-none transition-all duration-500">
+        <div className="flex items-center gap-4 pointer-events-auto">
+          <div className="w-8 h-8 bg-white flex items-center justify-center">
+            <Layers className="w-5 h-5 text-black" />
           </div>
-          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-            Code Wiki
+          <span className="font-black text-xl tracking-[0.2em] uppercase">
+            RepoLens
           </span>
         </div>
 
-        {/* Right Nav */}
-        <div className="flex items-center gap-4 pointer-events-auto relative z-10">
+        <div className="flex items-center gap-8 pointer-events-auto">
           {!isPending && (
             <>
               {session ? (
                 <Link href="/dashboard">
-                  <button className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-full transition-all text-sm font-medium backdrop-blur-md">
-                    <LayoutDashboard className="w-4 h-4" />
+                  <button className="flex items-center gap-2 px-6 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest hover:bg-lime-400 transition-colors">
                     Dashboard
                   </button>
                 </Link>
               ) : (
-                <div className="flex items-center gap-4">
-                  <HeaderSignIn />
-                </div>
+                <HeaderSignIn />
               )}
             </>
           )}
@@ -87,136 +72,132 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-48 pb-32 px-6 flex flex-col items-center text-center z-10 min-h-[90vh]">
-        <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative z-10 flex flex-col items-center w-full">
+      <section className="relative pt-64 pb-32 px-12 flex flex-col items-center text-center z-10 min-h-screen">
+        <motion.div style={{ opacity: heroOpacity, y: heroY }} className="relative z-10 flex flex-col items-center w-full max-w-5xl">
           
-          {/* Badge */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-12"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            <span className="text-[10px] font-black text-lime-400 tracking-[0.4em] uppercase border-b border-lime-400/20 pb-2">
+              Architectural Intelligence Core
             </span>
-            <span className="text-xs font-medium text-indigo-300 tracking-wide uppercase">AI-Native Documentation</span>
           </motion.div>
 
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-6xl md:text-8xl font-bold tracking-tighter mb-8 max-w-4xl mx-auto"
+            className="text-7xl md:text-9xl font-black tracking-tighter mb-12 leading-[0.85] uppercase"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40">
-              The Knowledge Layer
-            </span>
-            <br />
-            <span className="text-indigo-500 inline-block mt-2">for Software.</span>
+            The Knowledge Layer <br />
+            <span className="text-white/20">for Software.</span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="max-w-xl mx-auto mb-12 text-lg text-white/50 leading-relaxed"
+            className="max-w-2xl mx-auto mb-16 text-xl text-white/40 leading-relaxed font-medium"
           >
-            Instantly transform any repository into a structured, queryable knowledge base. 
-            Stop searching through files. Start asking questions.
+            A high-performance diagnostic engine that transforms complex repositories into structured, navigable archives. 
+            Real-time analysis. Zero clutter.
           </motion.p>
 
-          {/* Static Search Bar */}
+          {/* Search Bar */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="w-full max-w-2xl relative group"
+            className="w-full max-w-3xl relative"
           >
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
-              <Search className="h-5 w-5 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
+            <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none z-10">
+              <Search className="h-5 w-5 text-white/20" />
             </div>
             <input 
               type="text"
-              placeholder="Find open source repos..."
+              placeholder="Query repository index..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="w-full h-16 bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full pl-14 pr-6 text-base transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
+              className="w-full h-20 bg-black border border-white/10 hover:border-white/30 focus:border-lime-400/50 pl-16 pr-8 text-lg transition-all placeholder:text-white/10 outline-none font-mono"
             />
+            <div className="absolute inset-y-0 right-4 flex items-center">
+               <div className="px-3 py-1 bg-white/5 border border-white/10 text-[9px] font-mono text-white/20 uppercase tracking-widest">
+                 Press Enter
+               </div>
+            </div>
           </motion.div>
         </motion.div>
 
-        {/* Feature Grid (Floating Cards) */}
-        <div className="w-full max-w-6xl mx-auto mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        {/* Feature Grid */}
+        <div className="w-full max-w-7xl mx-auto mt-64 grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5 border border-white/5 relative z-10">
           {[
             { 
               icon: Globe, 
               title: "Universal Parsing", 
-              desc: "Understands TypeScript, Python, Go, and Rust out of the box." 
+              desc: "Deep AST understanding for TypeScript, Python, and Go architectures." 
             },
             { 
               icon: ShieldCheck, 
-              title: "Zero-Trust Analysis", 
-              desc: "Sandboxed execution environment ensures your code never leaves the secure perimeter." 
+              title: "Isolated Runtime", 
+              desc: "Secure sandboxed execution environment for snippet verification." 
             },
             { 
               icon: Cpu, 
-              title: "Semantic Intelligence", 
-              desc: "Vector-embedded knowledge graph connects definitions, usage, and architectural intent." 
+              title: "Semantic Index", 
+              desc: "Vector-embedded knowledge graph mapping intent and dependency." 
             }
           ].map((feature, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.4 + (i * 0.1) }}
-              className="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group"
+              transition={{ delay: i * 0.1 }}
+              className="bg-black p-12 hover:bg-white/[0.02] transition-colors group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 group-hover:bg-indigo-500/20 transition-colors">
-                <feature.icon className="w-6 h-6 text-indigo-400" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-white/90">{feature.title}</h3>
-              <p className="text-white/40 text-sm leading-relaxed">{feature.desc}</p>
+              <feature.icon className="w-6 h-6 text-lime-400 mb-8" />
+              <h3 className="text-xs font-black mb-4 text-white uppercase tracking-[0.2em]">{feature.title}</h3>
+              <p className="text-white/30 text-sm leading-relaxed font-medium">{feature.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* Featured Repositories */}
-      <section className="max-w-7xl mx-auto px-6 py-32 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+      <section className="max-w-7xl mx-auto px-12 py-64 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-20 border-b border-white/5 pb-12">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Trending Libraries</h2>
-            <p className="text-white/40">Explore knowledge bases generated by the community.</p>
+            <h2 className="text-5xl font-black uppercase tracking-tighter mb-4">Trending Archives</h2>
+            <p className="text-white/30 text-sm font-medium uppercase tracking-widest">Public knowledge bases indexed by the community.</p>
           </div>
-          <button className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium mt-4 md:mt-0">
-            View all repositories <ChevronRight className="w-4 h-4" />
+          <button className="flex items-center gap-3 text-white/40 hover:text-lime-400 transition-colors text-[10px] font-black uppercase tracking-[0.2em] mt-8 md:mt-0">
+            Internal Registry <ArrowRight className="w-4 h-4" />
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 border border-white/5">
           {featuredRepos.map((repo, idx) => (
             <motion.div 
               key={repo.name}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.05 }}
-              className="group p-6 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:border-indigo-500/30 hover:bg-white/[0.04] transition-all cursor-pointer relative overflow-hidden"
+              className="group p-10 bg-black hover:bg-white/[0.02] transition-all cursor-pointer relative"
             >
-              <div className="absolute top-0 right-0 p-32 bg-indigo-500/5 blur-[80px] rounded-full translate-x-10 -translate-y-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              
-              <div className="flex justify-between items-start mb-6 relative z-10">
-                <h3 className="font-bold text-xl">{repo.name}</h3>
-                <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-xs font-bold text-white/40 group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-all">
+              <div className="flex justify-between items-start mb-12">
+                <h3 className="font-black text-2xl uppercase tracking-tighter">{repo.name}</h3>
+                <div className="text-[10px] font-mono text-white/20 group-hover:text-lime-400 transition-colors uppercase">
                   {repo.icon}
                 </div>
               </div>
-              <p className="text-sm text-white/40 leading-relaxed mb-8 h-12 overflow-hidden relative z-10">{repo.desc}</p>
-              <div className="flex items-center gap-2 text-xs font-mono text-white/20 relative z-10">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                {repo.stars}
+              <p className="text-sm text-white/30 leading-relaxed mb-12 h-12 overflow-hidden font-medium">{repo.desc}</p>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-mono text-white/10 uppercase tracking-widest">
+                  Stars: {repo.stars}
+                </div>
+                <div className="w-2 h-2 rounded-full bg-white/5 group-hover:bg-lime-400 transition-colors" />
               </div>
             </motion.div>
           ))}
@@ -224,49 +205,47 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-6 py-32 flex flex-col items-center text-center relative z-10">
-        <div className="w-full max-w-5xl bg-gradient-to-b from-indigo-900/20 to-transparent rounded-[2.5rem] border border-white/5 p-12 md:p-24 relative overflow-hidden">
-          {/* Background Glows */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-500/20 blur-[120px] rounded-full pointer-events-none" />
+      <section className="px-12 py-64 flex flex-col items-center text-center relative z-10 border-t border-white/5 bg-[#030303]">
+        <div className="max-w-4xl">
+          <h2 className="text-6xl md:text-8xl font-black mb-12 tracking-tighter uppercase leading-[0.9]">
+            Optimize your <br />
+            <span className="text-white/20">mental model.</span>
+          </h2>
+          <p className="text-white/40 text-lg mb-16 max-w-xl mx-auto font-medium">
+            Join the elite engineering teams using RepoLens to archive and navigate software complexity.
+          </p>
           
-          <div className="relative z-10 flex flex-col items-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-              Ready to understand your code?
-            </h2>
-            <p className="text-white/50 text-lg mb-10 max-w-xl">
-              Join thousands of developers using Code Wiki to document, analyze, and query their software architecture.
-            </p>
-            
-            {!isPending && (
-              <>
-                {session ? (
-                   <Link href="/dashboard">
-                     <button className="flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-indigo-50 transition-all transform hover:scale-105 shadow-xl shadow-indigo-500/20">
-                       <Zap className="w-4 h-4 fill-current" />
-                       Go to Dashboard
-                     </button>
-                   </Link>
-                ) : (
-                   <HeroSignIn />
-                )}
-              </>
-            )}
-          </div>
+          {!isPending && (
+            <div className="flex flex-col items-center gap-6">
+              {session ? (
+                 <Link href="/dashboard">
+                   <button className="bg-white text-black px-12 py-5 text-[11px] font-black uppercase tracking-[0.3em] hover:bg-lime-400 transition-all active:scale-95">
+                     Enter Command Center
+                   </button>
+                 </Link>
+              ) : (
+                 <HeroSignIn />
+              )}
+              <span className="text-[9px] font-mono text-white/10 uppercase tracking-[0.4em]">v2.0 Architectural Core</span>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-black/40 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-8 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 opacity-50">
-            <Layers className="w-5 h-5" />
-            <span className="font-semibold text-sm">Code Wiki</span>
+      <footer className="border-t border-white/5 bg-black py-20 px-12">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+          <div className="flex items-center gap-4">
+            <div className="w-6 h-6 bg-white/10 flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5 text-white/40" />
+            </div>
+            <span className="font-black text-xs uppercase tracking-[0.3em] text-white/40">RepoLens</span>
           </div>
-          <div className="flex gap-8 text-sm text-white/30 font-medium">
-            <a href="#" className="hover:text-white transition-colors">Documentation</a>
-            <a href="#" className="hover:text-white transition-colors">API</a>
-            <a href="#" className="hover:text-white transition-colors">Twitter</a>
-            <a href="#" className="hover:text-white transition-colors">GitHub</a>
+          <div className="flex gap-12 text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">
+            <a href="#" className="hover:text-white transition-colors">Docs</a>
+            <a href="#" className="hover:text-white transition-colors">Protocol</a>
+            <a href="#" className="hover:text-white transition-colors">Archive</a>
+            <a href="#" className="hover:text-white transition-colors">Terminal</a>
           </div>
         </div>
       </footer>
