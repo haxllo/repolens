@@ -8,6 +8,7 @@ export const auth = betterAuth({
         provider: "postgresql",
     }),
     baseURL: process.env.BETTER_AUTH_URL,
+    trustHost: true,
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: false,
@@ -36,29 +37,7 @@ export const auth = betterAuth({
             },
         },
     },
-    databaseHooks: {
-        session: {
-            create: {
-                before: async (session) => {
-                    // Find the account for this user to get the access token
-                    const account = await prisma.account.findFirst({
-                        where: {
-                            userId: session.userId,
-                            providerId: "github",
-                        },
-                    });
-
-                    if (account?.accessToken) {
-                        await prisma.user.update({
-                            where: { id: session.userId },
-                            data: {
-                                githubToken: account.accessToken,
-                            },
-                        });
-                    }
-                    return { data: session };
-                },
-            },
-        },
+    logger: {
+        level: "debug",
     },
 });
