@@ -21,7 +21,7 @@ export function HeroSignIn() {
   return (
     <Link href="/auth/signin">
       <button
-        className="group relative h-12 px-8 text-base font-semibold overflow-hidden bg-white text-black transition-all duration-300 hover:bg-white/90 rounded-full flex items-center gap-2"
+        className="group relative h-12 px-8 text-base font-semibold overflow-hidden bg-indigo-600 text-white transition-all duration-300 hover:bg-indigo-500 rounded-full flex items-center gap-2 shadow-lg shadow-indigo-500/30"
       >
         <span className="relative flex items-center gap-2">
           Get Started Free
