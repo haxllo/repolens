@@ -24,8 +24,8 @@ import {
   useTransform, 
   useSpring
 } from 'framer-motion'
+import { HeaderSignIn, HeroSignIn } from '@/components/HomeSignInButtons'
 import { authClient } from '@/lib/auth-client'
-import { HeaderSignIn } from '@/components/HomeSignInButtons'
 
 const featuredRepos = [
   { name: 'gemini-cli', desc: 'An open-source AI agent that brings the power of Gemini directly into your terminal.', stars: '81.5k', icon: 'G' },
@@ -338,13 +338,21 @@ export default function HomePage() {
            </div>
            
            <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
-             <Link href="/dashboard">
-               <button className="flex items-center gap-2 bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-all">
-                 <Sparkles className="w-4 h-4 text-blue-400" />
-                 See Code Wiki in action
-                 <ChevronRight className="w-4 h-4" />
-               </button>
-             </Link>
+             {!isPending && (
+               <>
+                 {session ? (
+                   <Link href="/dashboard">
+                     <button className="flex items-center gap-2 bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-all text-white">
+                       <Sparkles className="w-4 h-4 text-blue-400" />
+                       See Code Wiki in action
+                       <ChevronRight className="w-4 h-4" />
+                     </button>
+                   </Link>
+                 ) : (
+                   <HeroSignIn />
+                 )}
+               </>
+             )}
            </div>
         </div>
       </section>
