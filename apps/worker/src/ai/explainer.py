@@ -16,15 +16,9 @@ class AIExplainer:
         if gemini_key:
             genai.configure(api_key=gemini_key)
             self.provider = 'gemini'
-            # Using 1.5 Flash for speed and excellent structured output
-            self.model_name = 'gemini-1.5-flash'
-            self.model = genai.GenerativeModel(
-                model_name=self.model_name,
-                system_instruction="""You are an expert software architect and technical writer. 
-                Your task is to transform raw static analysis data into a high-quality technical Wiki.
-                Focus on clarity, architectural patterns, and actionable insights.
-                Always return valid JSON following the requested schema."""
-            )
+            # Using confirmed available 2.0 Flash model from logs
+            self.model_name = 'gemini-2.0-flash'
+            self._init_gemini()
             self.enabled = True
             logger.info(f'Using Gemini AI with model: {self.model_name}')
         elif openrouter_key:
@@ -37,6 +31,16 @@ class AIExplainer:
             logger.warning('No AI API key found, Wiki generation disabled')
             self.provider = None
             self.enabled = False
+
+    def _init_gemini(self):
+        """Initialize or re-initialize the Gemini model"""
+        self.model = genai.GenerativeModel(
+            model_name=self.model_name,
+            system_instruction="""You are an expert software architect and technical writer. 
+            Your task is to transform raw static analysis data into a high-quality technical Wiki.
+            Focus on clarity, architectural patterns, and actionable insights.
+            Always return valid JSON following the requested schema."""
+        )
             
     async def explain(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -68,27 +72,31 @@ class AIExplainer:
             return self._generate_fallback_wiki(analysis_data)
     
     async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate Wiki using Gemini API with structured JSON output"""
+        """Generate Wiki using Gemini API with structured JSON output and fallback"""
         prompt = self._build_wiki_prompt(analysis_data)
         
-        response = self.model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json",
-            )
-        )
-        
         try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
+                )
+            )
             wiki_content = json.loads(response.text)
-            return {
-                **wiki_content,
-                'provider': 'gemini',
-                'model': 'gemini-1.5-flash',
-                'confidence': 'high'
-            }
-        except json.JSONDecodeError:
-            logger.error("Failed to parse Gemini JSON response")
-            return self._generate_fallback_wiki(analysis_data)
+        except Exception as e:
+            if self.model_name != 'gemini-flash-latest':
+                logger.warning(f"Primary model {self.model_name} failed, trying gemini-flash-latest fallback. Error: {str(e)}")
+                self.model_name = 'gemini-flash-latest'
+                self._init_gemini()
+                return await self._explain_with_gemini(analysis_data)
+            raise e
+        
+        return {
+            **wiki_content,
+            'provider': 'gemini',
+            'model': self.model_name,
+            'confidence': 'high'
+        }
 
     async def _explain_with_openrouter(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate Wiki using OpenRouter API"""
