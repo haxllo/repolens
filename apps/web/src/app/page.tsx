@@ -15,10 +15,16 @@ import {
   RefreshCcw,
   Link as LinkIcon,
   MousePointer2,
-  Moon
+  Moon,
+  BookOpen,
+  Code
 } from 'lucide-react'
-import { authClient } from '@/lib/auth-client'
-import { HeaderSignIn } from '@/components/HomeSignInButtons'
+import { 
+  useScroll, 
+  useTransform, 
+  useSpring,
+  AnimatePresence
+} from 'framer-motion'
 
 const featuredRepos = [
   { name: 'gemini-cli', desc: 'An open-source AI agent that brings the power of Gemini directly into your terminal.', stars: '81.5k', icon: 'G' },
@@ -32,12 +38,31 @@ const featuredRepos = [
 export default function HomePage() {
   const { data: session, isPending } = authClient.useSession()
   const [searchValue, setSearchValue] = useState('')
+  
+  const { scrollY } = useScroll()
+  
+  // Search bar docking transforms
+  const searchY = useTransform(scrollY, [0, 200], [0, -215])
+  const searchScale = useTransform(scrollY, [0, 200], [1, 0.7])
+  const searchWidth = useTransform(scrollY, [0, 200], ['100%', '40%'])
+  const searchOpacity = useTransform(scrollY, [200, 250], [1, 1])
+  
+  // Hero content fades
+  const heroOpacity = useTransform(scrollY, [0, 150], [1, 0])
+  const heroScale = useTransform(scrollY, [0, 150], [1, 0.9])
+
+  // Parallax for cards
+  const cardsY = useTransform(scrollY, [0, 400], [0, -100])
+  const cardsRotate = useTransform(scrollY, [0, 400], [12, 0])
+
+  const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
+  const smoothSearchY = useSpring(searchY, springConfig)
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-blue-500/30">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 py-6">
-        <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-[#020202] text-white selection:bg-blue-500/30 overflow-x-hidden">
+      {/* Navbar & Docked Search Area */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-6 pointer-events-none">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <div className="flex gap-0.5">
             <div className="w-2 h-2 rounded-full bg-orange-400" />
             <div className="w-2 h-2 rounded-full bg-blue-400" />
@@ -45,7 +70,31 @@ export default function HomePage() {
           </div>
           <span className="font-bold text-lg tracking-tight">Code Wiki</span>
         </div>
-        <div className="flex items-center gap-6">
+        
+        {/* The Docking Search Bar */}
+        <motion.div 
+          style={{ 
+            y: smoothSearchY, 
+            scale: searchScale,
+            width: searchWidth,
+          }}
+          className="absolute left-1/2 -translate-x-1/2 top-[248px] pointer-events-auto w-full max-w-2xl px-4 md:px-0"
+        >
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-white/20 group-focus-within:text-blue-400 transition-colors" />
+            </div>
+            <input 
+              type="text"
+              placeholder="Find open source repos"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all placeholder:text-white/20 backdrop-blur-md shadow-2xl"
+            />
+          </div>
+        </motion.div>
+
+        <div className="flex items-center gap-6 pointer-events-auto">
           <Moon className="w-4 h-4 text-white/40 cursor-pointer hover:text-white transition-colors" />
           {!isPending && (
             <>
@@ -64,73 +113,104 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="pt-20 pb-32 px-6 flex flex-col items-center text-center">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-7xl md:text-8xl font-bold tracking-tighter mb-6"
-        >
-          Code Wiki
-        </motion.h1>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="max-w-xl mx-auto mb-12"
-        >
-          <p className="text-blue-400/80 font-medium mb-1">A new perspective on development for the agentic era.</p>
-          <p className="text-white/40">Gemini-generated documentation, always up-to-date.</p>
+      {/* Hero Content */}
+      <section className="relative pt-40 pb-32 px-6 flex flex-col items-center text-center z-10">
+        <motion.div style={{ opacity: heroOpacity, scale: heroScale }}>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-7xl md:text-8xl font-bold tracking-tighter mb-6"
+          >
+            Code Wiki
+          </motion.h1>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="max-w-xl mx-auto mb-12"
+          >
+            <p className="text-blue-400/80 font-medium mb-1 text-lg">A new perspective on development for the agentic era.</p>
+            <p className="text-white/40 text-lg">Gemini-generated documentation, always up-to-date.</p>
+          </motion.div>
         </motion.div>
 
-        <div className="relative w-full max-w-2xl group">
-          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-white/20 group-focus-within:text-blue-400 transition-colors" />
-          </div>
-          <input 
-            type="text"
-            placeholder="Find open source repos"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-all placeholder:text-white/20"
-          />
-        </div>
+        {/* Height spacer for the absolute search bar's initial position */}
+        <div className="h-24" />
 
-        {/* Perspective Cards Placeholder */}
-        <div className="mt-20 relative h-[300px] w-full max-w-4xl mx-auto flex justify-center items-center">
-          <div className="absolute inset-0 bg-blue-600/10 blur-[120px] rounded-full translate-y-20" />
-          <div className="relative flex gap-4 rotate-x-12">
+        {/* Perspective Cards with Parallax */}
+        <motion.div 
+          style={{ y: cardsY, rotateX: cardsRotate }}
+          className="mt-20 relative h-[400px] w-full max-w-5xl mx-auto flex justify-center items-center perspective-1000"
+        >
+          <div className="absolute inset-0 bg-blue-600/5 blur-[120px] rounded-full translate-y-20" />
+          
+          {/* Floating Wireframe Cube Placeholder */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-20 w-64 h-64 opacity-20 pointer-events-none">
+            <div className="w-full h-full border border-blue-400/30 rotate-45 animate-pulse" />
+            <div className="absolute inset-0 border border-blue-400/20 -rotate-12" />
+          </div>
+
+          <div className="relative flex gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div 
+              <motion.div 
                 key={i}
-                className="w-48 h-64 bg-white/[0.03] border border-white/10 rounded-xl backdrop-blur-sm -rotate-y-12 shadow-2xl"
-                style={{ transform: `translateZ(${i * 20}px) translateY(${i * -10}px)` }}
-              />
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + (i * 0.1) }}
+                className="w-48 h-64 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-sm -rotate-y-12 shadow-2xl flex flex-col p-6"
+                style={{ 
+                  transform: `translateZ(${i * 30}px) translateY(${i * -15}px)`,
+                }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-white/5 mb-4 flex items-center justify-center">
+                  {i === 1 && <BookOpen className="w-5 h-5 text-blue-400/60" />}
+                  {i === 2 && <Code className="w-5 h-5 text-blue-400/60" />}
+                  {i === 3 && <MessageSquare className="w-5 h-5 text-blue-400/60" />}
+                  {i === 4 && <MousePointer2 className="w-5 h-5 text-blue-400/60" />}
+                </div>
+                <div className="h-2 w-full bg-white/5 rounded mb-2" />
+                <div className="h-2 w-3/4 bg-white/5 rounded mb-2" />
+                <div className="mt-auto h-2 w-1/2 bg-blue-400/20 rounded" />
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Featured Repositories */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-bold mb-12">Featured Repositories</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredRepos.map((repo) => (
-            <div key={repo.name} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-blue-500/30 hover:bg-white/[0.04] transition-all cursor-pointer">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="font-bold text-lg">{repo.name}</h3>
-                <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-[10px] font-bold text-white/40">
-                  {repo.icon}
+      {/* Featured Repositories - Reveal on Scroll */}
+      <section className="max-w-6xl mx-auto px-6 py-20 relative">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-4xl font-bold mb-12 tracking-tight">Featured Repositories</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredRepos.map((repo, idx) => (
+              <motion.div 
+                key={repo.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="group p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:border-blue-500/30 hover:bg-white/[0.04] transition-all cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="font-bold text-xl">{repo.name}</h3>
+                  <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-xs font-bold text-white/40">
+                    {repo.icon}
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-white/40 leading-relaxed mb-6 h-12 overflow-hidden">{repo.desc}</p>
-              <div className="flex items-center gap-1.5 text-[11px] text-white/20">
-                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                {repo.stars}
-              </div>
-            </div>
-          ))}
-        </div>
+                <p className="text-sm text-white/40 leading-relaxed mb-8 h-12 overflow-hidden">{repo.desc}</p>
+                <div className="flex items-center gap-2 text-xs font-mono text-white/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
+                  {repo.stars}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </section>
 
       {/* Try with Private Repos */}
