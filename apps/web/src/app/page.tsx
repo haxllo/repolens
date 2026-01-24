@@ -22,9 +22,10 @@ import {
 import { 
   useScroll, 
   useTransform, 
-  useSpring,
-  AnimatePresence
+  useSpring
 } from 'framer-motion'
+import { authClient } from '@/lib/auth-client'
+import { HeaderSignIn } from '@/components/HomeSignInButtons'
 
 const featuredRepos = [
   { name: 'gemini-cli', desc: 'An open-source AI agent that brings the power of Gemini directly into your terminal.', stars: '81.5k', icon: 'G' },
