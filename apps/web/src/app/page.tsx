@@ -41,8 +41,9 @@ export default function HomePage() {
   // Move from hero position (480px) to navbar center
   const searchY = useTransform(scrollY, [0, 400], [0, -468]) 
   
-  // Width transitions: Full width -> Fixed 500px
-  const searchWidth = useTransform(scrollY, [0, 400], ['100%', '500px'])
+  // Width transitions: Hero Width (700px) -> Navbar Width (500px)
+  // Using pixel values for both ensures stable centering
+  const searchWidth = useTransform(scrollY, [0, 400], ['700px', '500px'])
   
   // Height transitions: Tall hero input (64px) -> Sleek navbar input (44px)
   const searchHeight = useTransform(scrollY, [0, 400], ['64px', '44px'])
@@ -82,16 +83,19 @@ export default function HomePage() {
           </span>
         </div>
         
-        {/* The Docking Search Bar */}
+        {/* The Docking Search Bar Container - Fixed Centering */}
         <motion.div 
-          style={{ 
-            y: smoothSearchY, 
-            width: smoothSearchWidth,
-            height: smoothSearchHeight,
-          }}
-          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto w-full max-w-2xl px-4 md:px-0 origin-center z-50 flex items-center justify-center"
+          style={{ y: smoothSearchY }}
+          className="absolute left-1/2 -translate-x-1/2 top-[480px] pointer-events-auto flex items-center justify-center z-50"
         >
-          <div className="relative group w-full h-full">
+          {/* Inner Input - Width Animates Here */}
+          <motion.div 
+            style={{ 
+              width: smoothSearchWidth,
+              height: smoothSearchHeight,
+            }}
+            className="relative group"
+          >
             <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
               <Search className="h-4 w-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
             </div>
@@ -100,10 +104,10 @@ export default function HomePage() {
               placeholder="Find open source repos..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              style={{ height: smoothSearchHeight, padding: searchPadding }}
+              style={{ padding: searchPadding }}
               className="w-full h-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/80 border border-white/10 hover:border-white/20 focus:border-indigo-500/50 rounded-full pl-12 pr-6 text-sm transition-all placeholder:text-white/20 backdrop-blur-xl shadow-2xl shadow-indigo-500/10 outline-none"
             />
-          </div>
+          </motion.div>
         </motion.div>
 
         {/* Right Nav */}
