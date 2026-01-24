@@ -141,66 +141,77 @@ class AIExplainer:
                 }
             
     def _build_wiki_prompt(self, data: Dict[str, Any]) -> str:
-        """Build a sophisticated prompt for Wiki generation"""
+        """Build a sophisticated "CodeWiki" style prompt for deep repository understanding"""
         languages = data.get('languages', {})
         risk = data.get('risk_scores', {})
         deps = data.get('dependencies', {})
-        readme = data.get('readme_analysis', {})
         complexity = data.get('complexity', {})
-        dead_code = data.get('dead_code', {})
+        ast_files = data.get('ast_files', [])
         
-        # Prepare context for the AI
+        # Build a simplified file tree for context (top 2 levels + entry points)
+        file_tree = {}
+        for f in ast_files:
+            parts = f['path'].split('/')
+            curr = file_tree
+            for part in parts[:2]:  # Only first two levels to save tokens
+                if part not in curr:
+                    curr[part] = {}
+                curr = curr[part]
+
         context = {
             "tech_stack": {
                 "primary": languages.get('primary'),
                 "frameworks": languages.get('frameworks', []),
-                "dependency_count": deps.get('statistics', {}).get('total', 0)
+                "dependencies": deps.get('statistics', {}).get('total', 0)
             },
-            "health_metrics": {
-                "risk_score": risk.get('overall'),
-                "maintainability": risk.get('maintainability'),
-                "has_dead_code": dead_code.get('has_dead_code', False),
-                "circular_deps_count": len(data.get('circular_dependencies', {}).get('cycles', []))
+            "structure": {
+                "file_tree_snippet": file_tree,
+                "entry_points": data.get('entry_points', []),
+                "total_files": len(ast_files)
             },
-            "complexity": {
-                "avg_complexity": complexity.get('statistics', {}).get('averageComplexity'),
-                "hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:3]]
+            "health": {
+                "risk": risk.get('overall'),
+                "complexity_hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:5]]
             }
         }
 
-        prompt = f"""Generate a comprehensive Technical Wiki for this repository based on the analysis context below.
+        prompt = f"""As a Principal Software Architect, generate a "CodeWiki" for this repository. 
+The goal is to provide a "Knowledge Map" that helps a new senior engineer understand the system's mental model in 5 minutes.
 
 CONTEXT:
 {json.dumps(context, indent=2)}
 
 OUTPUT SCHEMA:
 {{
-  "summary": "One sentence "elevator pitch" of the project",
+  "summary": "High-level architectural purpose of the system.",
   "chapters": [
     {{
-      "title": "System Overview",
-      "content": "Markdown detailing the project's purpose and core capabilities."
+      "title": "Core Architecture & Design Patterns",
+      "content": "Deep dive into the structural layout (e.g. Layered, DDD, microservices). Identify key patterns used (e.g. Factory, Observer, Hooks)."
     }},
     {{
-      "title": "Architecture & Components",
-      "content": "Markdown describing how the code is organized, major patterns (MVC, Hexagonal, etc.), and key building blocks."
+      "title": "Module Directory & Responsibilities",
+      "content": "Explain what each major directory in the file tree is responsible for. Group them logically (e.g. 'Business Logic', 'UI Components', 'Data Access')."
     }},
     {{
-      "title": "Data Flow & Integrations",
-      "content": "Markdown explaining how data moves through the system and how it interacts with external dependencies."
+      "title": "Execution Flow & Entry Points",
+      "content": "Describe how the system starts and how data typically flows from entry points through the core logic."
     }},
     {{
-      "title": "Development Health & Maintenance",
-      "content": "Markdown assessing code quality, technical debt (dead code, complexity), and suggestions for improvement."
+      "title": "Technical Debt & Evolution Path",
+      "content": "Based on hotspots and complexity, where should the team focus refactoring? What are the architectural risks?"
     }}
+  ],
+  "module_map": [
+     {{ "path": "string", "role": "short description of purpose" }}
   ]
 }}
 
 INSTRUCTIONS:
-- Use professional Markdown for chapter content (headings, lists, code blocks).
-- Be descriptive and analytical.
-- Infer purpose from the tech stack and file structure context.
-- DO NOT mention the analysis data points directly (e.g., don't say "The risk score is 20"), instead describe the health of the project qualitatively based on those scores.
+- Use professional, analytical Markdown.
+- Infer "Why" things are built this way from the directory names and tech stack.
+- Be specific. If you see 'apps/api', explain it as the backend entry point.
+- The 'module_map' should map major directories to their functional roles.
 """
         return prompt
         

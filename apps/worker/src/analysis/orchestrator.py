@@ -102,11 +102,13 @@ class AnalysisOrchestrator:
                 repo_path=repo_path
             )
             
-            # Step 11: Generate AI explanations (enhanced with Phase 2 data)
+            # Step 11: Generate AI explanations (enhanced with Phase 2 data and structural context)
             logger.info('Step 11: Generating AI explanations')
             explanations = await self.ai_explainer.explain({
                 'languages': languages,
                 'ast_summary': ast_data.get('summary'),
+                'ast_files': ast_data.get('files', []),
+                'entry_points': ast_data.get('entryPoints', []),
                 'dependencies': dependencies,
                 'risk_scores': risk_scores,
                 'circular_dependencies': circular_deps,

@@ -1,5 +1,19 @@
 import { Badge } from '@/components/ui/badge'
-import { Code, FileCode, Layers, Sparkles, Package, AlertTriangle, Zap } from 'lucide-react'
+import { 
+  FileCode, 
+  Layers, 
+  Sparkles, 
+  Package, 
+  AlertTriangle, 
+  Zap,
+  BookOpen,
+  ChevronRight,
+  FolderTree,
+  Activity,
+  ShieldCheck
+} from 'lucide-react'
+import { MDXRenderer } from '@/components/ui/mdx-renderer'
+import { useState } from 'react'
 
 interface OverviewTabProps {
   results: any
@@ -11,30 +25,19 @@ export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
   const explanations = results?.explanations || {}
   const riskScores = results?.riskScores || {}
   const dependencies = results?.dependencies || {}
-  const ast = results?.ast || {}
   
-  // Get AI summary from explanations
-  const aiSummary = explanations?.summary || 'No AI summary available.'
-  const aiModel = explanations?.model || ''
-  const aiConfidence = explanations?.confidence || ''
-  
-  // Calculate totals from languages
-  const totalFiles = languages?.totalFiles || 0
-  
-  // Get language breakdown
-  const languageBreakdown = languages?.languages || {}
-  const totalLanguageFiles = Object.values(languageBreakdown).reduce(
-    (sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0
-  )
-  
-  // Get primary language and frameworks
-  const primaryLanguage = languages?.primary || Object.keys(languageBreakdown)[0] || 'Unknown'
-  const frameworks = languages?.frameworks || []
-  
-  // Get dependency count
-  const depCount = dependencies?.dependencies?.length || dependencies?.count || 0
+  const [activeChapter, setActiveChapter] = useState(0)
 
-  // Get risk level color
+  // Get AI data
+  const chapters = explanations?.chapters || []
+  const moduleMap = explanations?.module_map || []
+  const summary = explanations?.summary || 'Analyzing architectural patterns...'
+  
+  // Stats
+  const totalFiles = languages?.totalFiles || 0
+  const depCount = dependencies?.statistics?.total || 0
+  const riskLevel = riskScores?.level || 'Unknown'
+
   const getRiskColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case 'high': return 'text-red-400'
@@ -45,144 +48,132 @@ export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Repository Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="w-12 h-12 rounded-xl bg-lime-400/10 flex items-center justify-center mx-auto mb-4">
-            <FileCode className="h-6 w-6 text-lime-400" />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Left Sidebar: Knowledge Index */}
+      <div className="lg:col-span-3 space-y-6">
+        <div className="glass rounded-2xl p-4 sticky top-6">
+          <div className="flex items-center gap-2 mb-4 px-2">
+            <BookOpen className="h-4 w-4 text-lime-400" />
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white/50">Knowledge Index</h3>
           </div>
-          <p className="text-3xl font-bold">{totalFiles}</p>
-          <p className="text-sm text-white/50 mt-1">Total Files</p>
-        </div>
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="w-12 h-12 rounded-xl bg-lime-400/10 flex items-center justify-center mx-auto mb-4">
-            <Layers className="h-6 w-6 text-lime-400" />
-          </div>
-          <p className="text-3xl font-bold">{Object.keys(languageBreakdown).length}</p>
-          <p className="text-sm text-white/50 mt-1">Languages</p>
-        </div>
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="w-12 h-12 rounded-xl bg-lime-400/10 flex items-center justify-center mx-auto mb-4">
-            <Package className="h-6 w-6 text-lime-400" />
-          </div>
-          <p className="text-3xl font-bold">{depCount}</p>
-          <p className="text-sm text-white/50 mt-1">Dependencies</p>
-        </div>
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="w-12 h-12 rounded-xl bg-lime-400/10 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className={`h-6 w-6 ${getRiskColor(riskScores?.level)}`} />
-          </div>
-          <p className={`text-3xl font-bold ${getRiskColor(riskScores?.level)}`}>
-            {Math.round(riskScores?.overall || 0)}
-          </p>
-          <p className="text-sm text-white/50 mt-1">Risk Score</p>
-        </div>
-      </div>
-
-      {/* Tech Stack */}
-      <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Tech Stack</h3>
-        <div className="flex flex-wrap gap-2">
-          <Badge className="bg-lime-400/20 text-lime-400 border-lime-400/30 text-sm px-3 py-1">
-            {primaryLanguage}
-          </Badge>
-          {frameworks.map((fw: string) => (
-            <Badge key={fw} className="bg-blue-400/20 text-blue-400 border-blue-400/30 text-sm px-3 py-1">
-              {fw}
-            </Badge>
-          ))}
-          {Object.entries(languageBreakdown)
-            .filter(([lang]) => lang.toLowerCase() !== primaryLanguage.toLowerCase())
-            .map(([lang, count]: [string, any]) => (
-              <Badge key={lang} className="bg-white/5 text-white/60 border-white/10 text-sm px-3 py-1">
-                {lang} ({count})
-              </Badge>
+          <nav className="space-y-1">
+            {chapters.map((chapter: any, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => setActiveChapter(idx)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
+                  activeChapter === idx 
+                    ? 'bg-lime-400 text-black font-medium shadow-lg shadow-lime-400/20' 
+                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span className="truncate">{chapter.title}</span>
+                <ChevronRight className={`h-4 w-4 opacity-50 ${activeChapter === idx ? 'text-black' : ''}`} />
+              </button>
             ))}
+          </nav>
+
+          {moduleMap.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4 px-2">
+                <FolderTree className="h-4 w-4 text-blue-400" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/50">Module Map</h3>
+              </div>
+              <div className="space-y-3 px-2">
+                {moduleMap.slice(0, 6).map((mod: any, idx: number) => (
+                  <div key={idx} className="group">
+                    <p className="text-xs font-mono text-blue-400 truncate">{mod.path}</p>
+                    <p className="text-[10px] text-white/40 leading-tight group-hover:text-white/60 transition-colors">
+                      {mod.role}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Language Breakdown */}
-      <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Language Distribution</h3>
-        <div className="space-y-4">
-          {Object.entries(languageBreakdown)
-            .sort(([, a]: [string, any], [, b]: [string, any]) => (b as number) - (a as number))
-            .map(([lang, count]: [string, any]) => {
-              const percentage = totalLanguageFiles > 0 
-                ? ((count as number) / totalLanguageFiles * 100).toFixed(1) 
-                : 0
-              return (
-                <div key={lang} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge className="bg-lime-400/10 text-lime-400 border-lime-400/20 hover:bg-lime-400/20">
-                        {lang}
-                      </Badge>
-                      <span className="text-sm text-white/40">{count} files</span>
-                    </div>
-                    <span className="text-sm font-medium">{percentage}%</span>
-                  </div>
-                  <div className="w-full bg-white/5 rounded-full h-2">
-                    <div
-                      className="bg-lime-400 h-2 rounded-full transition-all"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
+      {/* Main Content Area */}
+      <div className="lg:col-span-9 space-y-6">
+        {/* Pulse Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="glass rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center shrink-0">
+              <FileCode className="h-5 w-5 text-lime-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">{totalFiles}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-tighter">Files</p>
+            </div>
+          </div>
+          <div className="glass rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-400/10 flex items-center justify-center shrink-0">
+              <Package className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">{depCount}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-tighter">Deps</p>
+            </div>
+          </div>
+          <div className="glass rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center shrink-0">
+              <Activity className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">{Math.round(riskScores?.overall || 0)}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-tighter">Health</p>
+            </div>
+          </div>
+          <div className="glass rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-400/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <p className={`text-lg font-bold ${getRiskColor(riskLevel)}`}>{riskLevel}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-tighter">Trust</p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* AI Summary */}
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center">
+        {/* Main Wiki Chapter */}
+        <div className="glass rounded-2xl p-8 min-h-[500px] relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+            <Sparkles className="w-64 h-64 text-lime-400" />
+          </div>
+
+          <div className="relative">
+            <div className="flex items-center gap-2 text-lime-400 mb-2">
+              <Zap className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-widest">Architectural Insight</span>
+            </div>
+            <h2 className="text-3xl font-bold mb-6">{chapters[activeChapter]?.title}</h2>
+            
+            <div className="prose prose-invert max-w-none">
+              {chapters[activeChapter] ? (
+                <MDXRenderer content={chapters[activeChapter].content} />
+              ) : (
+                <p className="text-white/50">Select a chapter to begin exploring the codebase knowledge.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Summary */}
+        <div className="glass rounded-2xl p-6 bg-lime-400/5 border-lime-400/10">
+          <div className="flex gap-4 items-start">
+            <div className="w-10 h-10 rounded-xl bg-lime-400/20 flex items-center justify-center shrink-0">
               <Sparkles className="h-5 w-5 text-lime-400" />
             </div>
             <div>
-              <h3 className="font-semibold">AI Analysis Summary</h3>
-              <p className="text-sm text-white/50">Generated insights about the repository</p>
+              <h4 className="font-semibold text-lime-400 mb-1">Executive Summary</h4>
+              <p className="text-white/70 italic text-sm leading-relaxed">
+                "{summary}"
+              </p>
             </div>
           </div>
-          {aiConfidence && (
-            <Badge className="bg-lime-400/10 text-lime-400 border-lime-400/20">
-              {aiConfidence} confidence
-            </Badge>
-          )}
         </div>
-        <div className="prose prose-invert max-w-none">
-          <p className="text-white/70 whitespace-pre-wrap leading-relaxed">{aiSummary}</p>
-        </div>
-        {aiModel && (
-          <p className="text-xs text-white/30 mt-4 flex items-center gap-1">
-            <Zap className="h-3 w-3" />
-            Powered by {aiModel}
-          </p>
-        )}
       </div>
-
-      {/* Quick Stats from Risk */}
-      {riskScores?.breakdown && (
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Quick Health Check</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(riskScores.breakdown).map(([key, data]: [string, any]) => (
-              <div key={key} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <p className="text-xs text-white/40 capitalize mb-1">{key.replace(/_/g, ' ')}</p>
-                <p className={`text-xl font-bold ${
-                  data.score > 75 ? 'text-red-400' : 
-                  data.score > 50 ? 'text-yellow-400' : 'text-lime-400'
-                }`}>
-                  {Math.round(data.score)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

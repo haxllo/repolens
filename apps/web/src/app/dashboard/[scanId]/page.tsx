@@ -7,11 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import OverviewTab from '@/components/scan/OverviewTab'
-import DependenciesTab from '@/components/scan/DependenciesTab'
-import RiskTab from '@/components/scan/RiskTab'
-import FilesTab from '@/components/scan/FilesTab'
-import QualityTab from '@/components/scan/QualityTab'
-import { VisualizationsTab } from '@/components/scan/VisualizationsTab'
 import { 
   ArrowLeft, 
   GitBranch, 
@@ -19,12 +14,7 @@ import {
   Loader2, 
   AlertCircle, 
   Clock3,
-  LayoutDashboard,
-  Activity,
-  Network,
-  FileCode,
-  ShieldAlert,
-  Eye
+  LayoutDashboard
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -236,74 +226,19 @@ export default function ScanDetailPage() {
 
       {/* Results Tabs */}
       {isCompleted && scan.results && (
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="codewiki" className="w-full">
           <TabsList className="glass rounded-xl p-1 h-auto flex-wrap gap-1">
             <TabsTrigger 
-              value="overview" 
+              value="codewiki" 
               className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
             >
               <LayoutDashboard className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="quality"
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <Activity className="h-4 w-4 mr-2" />
-              Quality
-            </TabsTrigger>
-            <TabsTrigger 
-              value="visualizations"
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Visualizations
-            </TabsTrigger>
-            <TabsTrigger 
-              value="dependencies"
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <Network className="h-4 w-4 mr-2" />
-              Dependencies
-            </TabsTrigger>
-            <TabsTrigger 
-              value="risk"
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <ShieldAlert className="h-4 w-4 mr-2" />
-              Risk
-            </TabsTrigger>
-            <TabsTrigger 
-              value="files"
-              className="data-[state=active]:bg-lime-400 data-[state=active]:text-black rounded-lg px-4 py-2 text-sm"
-            >
-              <FileCode className="h-4 w-4 mr-2" />
-              Files
+              CodeWiki
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
+          <TabsContent value="codewiki" className="mt-6">
             <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
-          </TabsContent>
-
-          <TabsContent value="quality" className="mt-6">
-            <QualityTab results={scan.results} />
-          </TabsContent>
-
-          <TabsContent value="visualizations" className="mt-6">
-            <VisualizationsTab scanData={scan.results} />
-          </TabsContent>
-
-          <TabsContent value="dependencies" className="mt-6">
-            <DependenciesTab results={scan.results} />
-          </TabsContent>
-
-          <TabsContent value="risk" className="mt-6">
-            <RiskTab results={scan.results} />
-          </TabsContent>
-
-          <TabsContent value="files" className="mt-6">
-            <FilesTab results={scan.results} />
           </TabsContent>
         </Tabs>
       )}
