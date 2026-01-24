@@ -10,15 +10,16 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  username      String?   @unique
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id
+  email           String    @unique
+  name            String
+  username        String?   @unique
+  displayUsername String?
+  password        String?
+  emailVerified   Boolean   @default(false)
+  image           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   
   // Custom fields
   githubId      String?   @unique
@@ -31,30 +32,32 @@ model User {
   favorites     FavoriteRepository[]
   apiKeys       ApiKey[]
   
-  @@map("users")
+  @@map("user")
 }
 
 model Account {
-  id           String    @id @default(cuid())
-  userId       String
-  accountId    String
-  providerId   String
-  accessToken  String?   @db.Text
-  refreshToken String?   @db.Text
-  expiresAt    DateTime?
-  idToken      String?   @db.Text
-  password     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   @@unique([providerId, accountId])
-  @@map("accounts")
+  @@index([userId])
+  @@map("account")
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String   @id
   userId    String
   token     String   @unique
   expiresAt DateTime
@@ -65,20 +68,21 @@ model Session {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
+  @@index([userId])
+  @@map("session")
 }
 
 model Verification {
-  id         String   @id @default(cuid())
+  id         String   @id
   identifier String
   value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }
-
 model Scan {
   id            String    @id @default(cuid())
   userId        String?

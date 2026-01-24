@@ -1,13 +1,13 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { username } from "better-auth/plugins";
-import prisma from "@/lib/prisma";
+import prisma from "./prisma";
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
-    baseURL: process.env.BETTER_AUTH_URL,
+    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
     trustHost: true,
     emailAndPassword: {
         enabled: true,
@@ -17,6 +17,8 @@ export const auth = betterAuth({
         github: {
             clientId: process.env.GITHUB_CLIENT_ID!,
             clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+            // Ensure redirect happens correctly
+            redirectURI: process.env.BETTER_AUTH_URL + "/api/auth/callback/github",
         },
     },
     plugins: [
