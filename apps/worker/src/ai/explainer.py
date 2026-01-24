@@ -184,6 +184,16 @@ CONTEXT:
 OUTPUT SCHEMA:
 {{
   "summary": "High-level architectural purpose of the system.",
+  "onboarding_flow": {{
+    "welcome_message": "A friendly greeting summarizing the project's scale and nature.",
+    "guided_paths": [
+      {{ "title": "e.g., The API Journey", "description": "How requests are handled", "chapter_index": 0 }},
+      {{ "title": "e.g., Data & State", "description": "How the system stores information", "chapter_index": 1 }}
+    ],
+    "first_steps": [
+      {{ "file": "path/to/file", "reason": "Why this file is important to read first" }}
+    ]
+  }},
   "chapters": [
     {{
       "title": "Core Architecture & Design Patterns",
