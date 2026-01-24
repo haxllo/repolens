@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "nest start --watch",
-    "build": "../../node_modules/.bin/nest build",
+    "build": "nest build",
     "start": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
-    "clean": "rm -rf dist node_modules"
+    "clean": "rimraf dist node_modules"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.0.1",

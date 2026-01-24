@@ -213,6 +213,7 @@ class AIExplainer:
         deps = data.get('dependencies', {})
         complexity = data.get('complexity', {})
         ast_files = data.get('ast_files', [])
+        system = data.get('system', {})
         
         # Build a simplified file tree for context (top 2 levels + entry points)
         file_tree = {}
@@ -229,6 +230,12 @@ class AIExplainer:
                 "primary": languages.get('primary'),
                 "frameworks": languages.get('frameworks', []),
                 "dependencies": deps.get('statistics', {}).get('total', 0)
+            },
+            "system": {
+                "build_scripts": list(system.get('scripts', {}).keys())[:10],
+                "ci_workflows": [w['name'] for w in system.get('ci_workflows', [])],
+                "infrastructure": system.get('infrastructure', []),
+                "governance": system.get('governance', [])
             },
             "structure": {
                 "file_tree_snippet": file_tree,
@@ -268,6 +275,10 @@ OUTPUT SCHEMA:
     {{
       "title": "Module Directory & Responsibilities",
       "content": "Explain what each major directory in the file tree is responsible for. Group them logically (e.g. 'Business Logic', 'UI Components', 'Data Access')."
+    }},
+    {{
+      "title": "Development Workflow & Operations",
+      "content": "Explain how to build, test, and run the project based on the detected scripts and CI workflows. Mention key infrastructure tools (Docker, K8s)."
     }},
     {{
       "title": "Execution Flow & Entry Points",

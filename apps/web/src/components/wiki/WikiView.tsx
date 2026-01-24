@@ -8,7 +8,15 @@ import {
   BookOpen, 
   ChevronRight, 
   FileText, 
-  Sparkles
+  Sparkles,
+  Play,
+  Loader2,
+  Terminal,
+  Cpu,
+  GitBranch,
+  Activity,
+  Layers,
+  Settings
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,8 +29,203 @@ interface WikiViewProps {
   data: {
     summary?: string
     chapters: Chapter[]
+    system?: {
+      scripts?: Record<string, string>
+      ci_workflows?: any[]
+      infrastructure?: string[]
+      governance?: string[]
+    }
   }
   repoUrl: string
+}
+
+const SystemWidget = ({ system }: { system: WikiViewProps['data']['system'] }) => {
+  if (!system) return null;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 px-4">
+        System Intelligence
+      </h3>
+      <div className="glass rounded-2xl p-4 space-y-4 border border-white/5">
+        {/* Infrastructure */}
+        {system.infrastructure && system.infrastructure.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-blue-400">
+              <Cpu className="w-3 h-3" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">Infrastructure</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {system.infrastructure.map(item => (
+                <span key={item} className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300 text-[8px] font-mono border border-blue-500/20">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CI/CD Workflows */}
+        {system.ci_workflows && system.ci_workflows.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-lime-400">
+              <Activity className="w-3 h-3" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">CI Workflows</span>
+            </div>
+            <div className="space-y-1">
+              {system.ci_workflows.map(wf => (
+                <div key={wf.name} className="flex items-center justify-between text-[10px] text-white/50">
+                  <span className="truncate max-w-[120px]">{wf.name}</span>
+                  <div className="flex gap-1">
+                    {wf.events?.slice(0, 1).map((e: string) => (
+                      <span key={e} className="text-[8px] text-lime-400/60 uppercase">{e}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Major Scripts */}
+        {system.scripts && Object.keys(system.scripts).length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-orange-400">
+              <Settings className="w-3 h-3" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">Operational Scripts</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {Object.keys(system.scripts).slice(0, 6).map(script => (
+                <div key={script} className="px-1.5 py-1 rounded bg-white/5 text-[9px] text-white/40 truncate font-mono border border-white/5">
+                  {script}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CodeBlock = ({ className, children, ...props }: any) => {
+  const [output, setOutput] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const code = String(children).replace(/\n$/, '');
+  
+  // Extract language from className (e.g., "language-python")
+  const match = /language-(\w+)/.exec(className || '');
+  const language = match ? match[1] : '';
+  const isRunnable = language === 'python' || language === 'javascript' || language === 'typescript';
+
+  const runCode = async () => {
+    setIsRunning(true);
+    setOutput(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/execution`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: language === 'python' ? 'python' : 'javascript', code }) 
+      });
+      
+      const { jobId } = await res.json();
+      
+      // Poll for results
+      const poll = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/execution/result`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobId })
+          });
+          const data = await statusRes.json();
+          
+          if (data.status === 'completed') {
+            clearInterval(poll);
+            setIsRunning(false);
+            setOutput(data.result?.stdout || data.result?.stderr || "No output");
+          } else if (data.status === 'failed') {
+            clearInterval(poll);
+            setIsRunning(false);
+            setOutput(`Error: ${data.error || 'Execution failed'}`);
+          }
+        } catch (e) {
+            clearInterval(poll);
+            setIsRunning(false);
+            setOutput('Network error during polling');
+        }
+      }, 1000);
+      
+      // Timeout after 10s
+      setTimeout(() => {
+        clearInterval(poll);
+        if (isRunning) {
+             setIsRunning(false);
+             setOutput('Execution timed out (Frontend limit)');
+        }
+      }, 10000);
+
+    } catch (e) {
+      setIsRunning(false);
+      setOutput("Failed to initiate execution");
+    }
+  };
+
+  return (
+    <div className="relative group my-8">
+      <div className="absolute -inset-px bg-gradient-to-r from-lime-400/20 to-blue-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="relative bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden">
+        {/* Header with Run Button */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-white/[0.02]">
+           <div className="flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-red-500/50" />
+             <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+             <div className="w-2 h-2 rounded-full bg-green-500/50" />
+             <span className="text-[10px] uppercase tracking-widest text-white/30 font-mono ml-2">
+               {language || 'text'}
+             </span>
+           </div>
+           {isRunnable && (
+             <button 
+                onClick={runCode}
+                disabled={isRunning}
+                className="flex items-center gap-2 px-3 py-1 rounded-md bg-lime-400/10 hover:bg-lime-400/20 text-lime-400 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+                {isRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                {isRunning ? 'Running...' : 'Run Code'}
+             </button>
+           )}
+        </div>
+
+        {/* Code Content */}
+        <div className="p-6 overflow-x-auto">
+          <code className="text-sm font-mono text-white/80 leading-relaxed">
+            {children}
+          </code>
+        </div>
+
+        {/* Execution Output */}
+        <AnimatePresence>
+            {output && (
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="border-t border-white/10 bg-black/50"
+                >
+                    <div className="p-4 font-mono text-xs text-white/70">
+                        <div className="flex items-center gap-2 mb-2 text-white/30 uppercase tracking-widest text-[10px]">
+                            <Terminal className="w-3 h-3" />
+                            Output
+                        </div>
+                        <pre className="whitespace-pre-wrap">{output}</pre>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+      </div>
+    </div>
+  )
 }
 
 // Custom components for Wiki embedding (Simulated MDX)
@@ -58,14 +261,9 @@ const WikiComponents = () => ({
   // Modern code block with syntax styling
   code: ({ inline, className, children, ...props }: any) => {
     return !inline ? (
-      <div className="relative group my-8">
-        <div className="absolute -inset-px bg-gradient-to-r from-lime-400/20 to-blue-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-        <pre className={cn("relative bg-[#0a0a0a] border border-white/10 p-6 rounded-2xl overflow-x-auto", className)} {...props}>
-          <code className="text-sm font-mono text-white/80 leading-relaxed">
-            {children}
-          </code>
-        </pre>
-      </div>
+      <CodeBlock className={className} {...props}>
+          {children}
+      </CodeBlock>
     ) : (
       <code className="bg-white/10 px-1.5 py-0.5 rounded text-lime-300 font-mono text-xs" {...props}>
         {children}
@@ -133,6 +331,8 @@ export function WikiView({ data, repoUrl }: WikiViewProps) {
               ))}
             </nav>
           </div>
+
+          <SystemWidget system={data.system} />
 
           <div className="pt-6 border-t border-white/[0.06] space-y-4">
             <div className="glass rounded-2xl p-4 space-y-3">

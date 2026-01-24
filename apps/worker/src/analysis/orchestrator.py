@@ -6,6 +6,7 @@ from ..intake.repo_cloner import RepoCloner
 from ..detection.language_detector import LanguageDetector
 from ..parsers.ast_parser import ASTParser
 from .dependency_analyzer import DependencyAnalyzer
+from .system_analyzer import SystemAnalyzer
 from .risk_scorer import RiskScorer
 from .circular_deps import analyze_circular_dependencies
 from .dead_code import analyze_dead_code_from_files
@@ -27,6 +28,7 @@ class AnalysisOrchestrator:
         self.language_detector = LanguageDetector()
         self.ast_parser = ASTParser()
         self.dependency_analyzer = DependencyAnalyzer()
+        self.system_analyzer = SystemAnalyzer()
         self.risk_scorer = RiskScorer()
         self.ai_explainer = AIExplainer()
         self.storage = R2Storage()
@@ -75,6 +77,10 @@ class AnalysisOrchestrator:
             # Step 4: Analyze dependencies
             logger.info('Step 4: Analyzing dependencies')
             dependencies = await self.dependency_analyzer.analyze(repo_path, languages)
+
+            # Step 4.5: Analyze System Configuration (Scripts, CI, Infra)
+            logger.info('Step 4.5: Analyzing system configuration')
+            system_data = await self.system_analyzer.analyze(repo_path)
             
             # Step 5: Calculate risk scores
             logger.info('Step 5: Calculating risk scores')
@@ -115,6 +121,7 @@ class AnalysisOrchestrator:
                 'ast_files': ast_data.get('files', []),
                 'entry_points': ast_data.get('entryPoints', []),
                 'dependencies': dependencies,
+                'system': system_data,
                 'risk_scores': risk_scores,
                 'circular_dependencies': circular_deps,
                 'dead_code': dead_code,

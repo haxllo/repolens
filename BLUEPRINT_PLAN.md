@@ -1,41 +1,50 @@
-# RepoLens: "Architectural Blueprint" Transition Plan
+# RepoLens: Living Roadmap (The "CodeWiki" Pivot)
 
-**Project Status:** Planning / Research Phase
-**Goal:** Replace 3D "Exploration" sphere with a structured 2D "Diagnostic" blueprint.
+**Core Vision:** Transform RepoLens from a static analysis tool into an **Interactive, AI-Powered Operating System for Codebases**.
+**North Star:** Surpass the capabilities of "CodeWiki" by adding deep system intelligence and live code execution.
 
-## 1. Requirements & User Stories
-- **The "GPS" Experience:** Users should know exactly where they are in the project hierarchy.
-- **Layered Clarity:** Automatically separate UI, Logic, and Data layers.
-- **Risk Hotspots:** Immediate visual identification of complex/untested files.
-- **Blast Radius:** Understand the ripple effect of changing a specific file.
+---
 
-## 2. Technical Stack
-- **Engine:** ReactFlow (for high interactivity and custom node rendering).
-- **Layout Math:** D3-dag or a custom Sugiyama implementation.
-- **Data Flow:** Extract "In-degree" and "Out-degree" from existing dependency data to calculate "Rank".
+## 🏗️ Phase 1: The "System Intelligence" Backend (Status: IN PROGRESS)
+**Goal:** Understand the "How" (Workflows/Infra), not just the "What" (Code).
 
-## 3. Architecture Change
-Current: `scanData.dependencies.graph` -> `DependencyGraph3D` (Random/Spherical)
-Future: `scanData.dependencies.graph` -> `DependencyFlowProcessor` -> `ArchitecturalBlueprint` (Hierarchical)
+- [x] **SystemAnalyzer**: Parse `scripts`, `Makefile`, `.github/workflows`. (`apps/worker/src/analysis/system_analyzer.py`)
+- [x] **Orchestrator Integration**: Inject system data into the AI context.
+- [x] **Context-Aware Prompt**: Teach AI to write "Development Workflow" & "Infrastructure" chapters.
+- [ ] **Infrastructure Categorizer**: Detect Docker, K8s, Terraform and group them intelligently.
 
-## 4. Feature Roadmap
+## ⚡ Phase 2: The "Live Execution" Engine (Status: STARTED)
+**Goal:** Allow users to verify code and AI explanations instantly.
 
-### Phase 1: Hierarchical Ranking (Week 1)
-- [ ] Implement a Topological Sort algorithm to identify "Levels".
-- [ ] Group nodes by their depth in the dependency tree.
-- [ ] Handle circular dependencies gracefully (detect and highlight as "Risk").
+- [x] **SandboxService (Worker)**: Secure Docker execution environment. (`apps/worker/src/analysis/sandbox_service.py`)
+- [ ] **API Gateway**: New endpoint `POST /scan/:id/execute` to trigger worker jobs.
+- [ ] **Frontend**: `WikiView` component with "Run Code" buttons on code blocks.
+- [ ] **Streaming**: Real-time stdout/stderr streaming via WebSockets/Redis PubSub.
 
-### Phase 2: ReactFlow Implementation (Week 2)
-- [ ] Create custom Node components (FileNode, FolderNode).
-- [ ] Implement smooth edge paths with "Flow" direction.
-- [ ] Replace 3D Tab with the new Blueprint View.
+## 🗺️ Phase 3: The "Architectural Blueprint" (Status: PLANNED)
+**Goal:** Replace the chaotic 3D sphere with a structured, engineer-friendly map.
 
-### Phase 3: Diagnostic Overlays (Week 3)
-- [ ] Add "Heatmap mode" toggle directly on the graph.
-- [ ] Implement "Blast Radius" highlighting on hover.
-- [ ] Add AI-generated "Feature Grouping" boundaries.
+- [ ] **ReactFlow Integration**: Move from Three.js to ReactFlow for 2D, readable diagrams.
+- [ ] **Layered Layout**: Automatically sort nodes by responsibility (UI -> Logic -> Data).
+- [ ] **Interactive Overlays**: Toggle "Risk Heatmap", "Data Flow", "Test Coverage".
 
-## 5. Risk Assessment
-- **Layout Jitter:** Ensuring the graph doesn't jump around when filters change.
-- **Scale:** Handling repos with >1000 nodes without performance degradation.
-- **Mobile Support:** Ensuring the 2D map is usable on touch devices.
+## 🧠 Phase 4: The "Second Brain" (Status: RESEARCH)
+**Goal:** Personalized AI that learns your specific coding style.
+
+- [ ] **Vector Database**: Store embeddings of all code files (pgvector).
+- [ ] **RAG Pipeline**: "Retrieval Augmented Generation" for answering generic questions ("How do we handle auth?").
+- [ ] **User Context**: "Train" the model on the user's past PRs to mimic their tone.
+
+---
+
+## 📈 Current Focus: Phase 2 (Live Execution)
+**Objective:** Connect the frontend "Run" button to the backend Sandbox.
+
+### Technical Tasks
+1.  **Apps/API**: Create `ExecutionController` and `ExecutionQueue`.
+2.  **Apps/Web**: Update `WikiView` to parse ````python` blocks.
+3.  **Apps/Worker**: Implement the job processor for `execution` queue.
+
+---
+
+*This document is a living artifact. Update it as we learn and pivot.*

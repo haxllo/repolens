@@ -11,6 +11,7 @@ import { UserModule } from './user/user.module'
 import { GitHubModule } from './github/github.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HistoryModule } from './history/history.module'
+import { ExecutionModule } from './execution/execution.module'
 import { HealthController } from './health.controller'
 
 @Module({
@@ -44,6 +45,7 @@ import { HealthController } from './health.controller'
     GitHubModule,
     FavoritesModule,
     HistoryModule,
+    ExecutionModule,
   ],
   controllers: [HealthController],
   providers: [
