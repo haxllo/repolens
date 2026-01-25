@@ -8,7 +8,8 @@ import ReactFlow, {
     useNodesState,
     useEdgesState,
     Node,
-    Edge
+    Edge,
+    MarkerType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import BlueprintNode from './BlueprintNode';
@@ -56,16 +57,24 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
     });
 
     deps.forEach((edge: any, i: number) => {
-        const source = nodes.find(n => n.id.includes(edge.source));
-        const target = nodes.find(n => n.id.includes(edge.target));
+        // Find exact node matches for the dependency link
+        const sourceNode = nodes.find(n => n.id === edge.source);
+        const targetNode = nodes.find(n => n.id === edge.target);
         
-        if (source && target) {
+        if (sourceNode && targetNode) {
             edges.push({
                 id: `e-${i}`,
-                source: source.id,
-                target: target.id,
-                animated: true,
-                style: { stroke: '#1a1a1a', strokeWidth: 1 }
+                source: sourceNode.id,
+                target: targetNode.id,
+                animated: false,
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    width: 10,
+                    height: 10,
+                    color: '#a3e635',
+                },
+                style: { stroke: '#a3e635', strokeWidth: 1, opacity: 0.1 },
+                type: 'smoothstep'
             });
         }
     });
