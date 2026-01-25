@@ -10,6 +10,7 @@ interface FileNode {
   complexity?: number;
   risk?: number;
   children?: FileNode[];
+  [key: string]: any;
 }
 
 interface FileTreeHeatmapProps {
