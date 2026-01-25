@@ -86,14 +86,16 @@ class AIExplainer:
             )
             wiki_content = json.loads(response.text)
             
-            # Phase 2: Deep Dive (Map-Reduce Strategy)
-            # If we have file structure data, try to generate richer chapter content
             if 'ast_files' in analysis_data:
                 enriched_chapters = await self._enrich_chapters_with_clusters(wiki_content.get('chapters', []), analysis_data)
                 if enriched_chapters:
                     wiki_content['chapters'] = enriched_chapters
 
         except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower():
+                logger.warning("AI_CORE: Quota exceeded. Informing user.")
+                return self._generate_quota_standby_wiki(analysis_data)
+            
             if self.model_name != 'gemini-flash-latest':
                 logger.warning(f"Primary model {self.model_name} failed, trying gemini-flash-latest fallback. Error: {str(e)}")
                 self.model_name = 'gemini-flash-latest'
@@ -106,6 +108,25 @@ class AIExplainer:
             'provider': 'gemini',
             'model': self.model_name,
             'confidence': 'high'
+        }
+
+    def _generate_quota_standby_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Explicitly notify user about quota exhaustion."""
+        return {
+            'summary': "The AI synthesis quota has been reached.",
+            'chapters': [
+                {
+                    "title": "Protocol: Resource Limit",
+                    "content": "Deep architectural analysis is currently unavailable because the system's AI quota (Free Tier) has been exhausted. Your repository has been mapped and technical metadata has been extracted, but natural language explanations are disabled until the quota resets. Please try again in 60 seconds or upgrade your AI API key."
+                }
+            ],
+            'onboarding_flow': {
+                'welcome_message': "System indexed. AI Quota Reached.",
+                'guided_paths': [],
+                'first_steps': []
+            },
+            'provider': 'limiter',
+            'confidence': 'none'
         }
 
     async def _enrich_chapters_with_clusters(self, chapters: List[Dict], data: Dict[str, Any]) -> List[Dict]:

@@ -161,30 +161,31 @@ def build_call_graph(ast_data) -> Dict:
     try:
         builder = CallGraphBuilder()
         
-        # Handle both list and dict formats
-        files_data = {}
+        # Determine the files list from different potential structures
+        files = []
         if isinstance(ast_data, dict):
-            files_data = ast_data
+            files = ast_data.get('files', [])
         elif isinstance(ast_data, list):
-            # Convert list format to dict
-            for item in ast_data:
-                if isinstance(item, dict) and 'path' in item:
-                    files_data[item['path']] = item
+            files = ast_data
         
-        # Process each file
-        for file_path, file_ast in files_data.items():
-            # file_ast could be a list or dict, handle both
-            if isinstance(file_ast, list):
-                # If it's a list, skip it for now
+        # Process each file entry
+        for file_data in files:
+            if not isinstance(file_data, dict):
                 continue
                 
-            # Extract function definitions and mark exports as entry points
-            for func_def in file_ast.get('functions', []):
+            file_path = file_data.get('path', 'unknown')
+            # Extract function definitions if available in the AST data
+            # Note: Current ASTParser only returns counts, so this is for future proofing
+            functions_list = file_data.get('functions_data', []) 
+            if not isinstance(functions_list, list):
+                functions_list = []
+
+            for func_def in functions_list:
+                if not isinstance(func_def, dict): continue
                 func_name = func_def.get('name')
                 if func_def.get('is_exported'):
                     builder.mark_entry_point(func_name)
                 
-                # Add calls made by this function
                 for call in func_def.get('calls', []):
                     builder.add_call(func_name, call, file_path)
         

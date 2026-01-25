@@ -68,7 +68,7 @@ class ASTParser:
                 'patterns': {} # High-level architectural patterns found
             },
             'entryPoints': [],
-            'dependencies': set() # Internal module dependency graph
+            'dependencies': [] # Internal module dependency graph (converted to list)
         }
         
         detected_patterns = {cat: set() for cat in self.patterns.keys()}
