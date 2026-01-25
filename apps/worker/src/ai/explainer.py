@@ -159,33 +159,50 @@ Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
         system = data.get('system', {})
         deps = data.get('dependencies', {})
         
-        # Deep Diagnostics
+        # Deep Diagnostics with defensive defaults
         circular_deps = data.get('circular_dependencies', [])
-        dead_code = data.get('dead_code', {})
-        call_graph = data.get('call_graph', {})
+        if not isinstance(circular_deps, list): circular_deps = []
         
+        dead_code = data.get('dead_code', {})
+        if not isinstance(dead_code, dict): dead_code = {}
+        
+        call_graph = data.get('call_graph', {})
+        if not isinstance(call_graph, dict): call_graph = {}
+        
+        ast_summary = data.get('ast_summary', {})
+        if not isinstance(ast_summary, dict): ast_summary = {}
+        
+        ast_files = data.get('ast_files', [])
+        if not isinstance(ast_files, list): ast_files = []
+
+        # Safe Slicing Helper
+        def safe_slice(obj, limit):
+            if isinstance(obj, (list, str)):
+                return obj[:limit]
+            return obj
+
         context = {
             "tech_protocol": {
                 "primary": languages.get('primary'),
                 "stack": languages.get('frameworks', []),
-                "patterns_detected": data.get('ast_summary', {}).get('patterns', {}),
+                "patterns_detected": ast_summary.get('patterns', {}),
                 "dependency_stats": deps.get('statistics', {})
             },
             "structural_integrity": {
                 "risk": data.get('risk_scores', {}).get('overall'),
-                "circular_loops": circular_deps[:10],
+                "circular_loops": safe_slice(circular_deps, 10),
                 "dead_code_ratio": dead_code.get('statistics', {}).get('unusedRatio'),
                 "complexity_metrics": complexity.get('statistics', {}),
-                "hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:8]]
+                "hotspots": [f["path"] for f in safe_slice(complexity.get('fileSummaries', []), 8)]
             },
             "logic_flow": {
                 "entry_points": data.get('entry_points', []),
-                "call_edges_snippet": list(call_graph.get('edges', []))[:20],
-                "most_complex_functions": call_graph.get('most_complex', [])[:5]
+                "call_edges_snippet": safe_slice(list(call_graph.get('edges', [])), 20),
+                "most_complex_functions": safe_slice(call_graph.get('most_complex', []), 5)
             },
             "operational_os": {
                 "build_logic": system.get('scripts', {}),
-                "script_samples": {k: v[:600] for k, v in system.get('script_contents', {}).items()},
+                "script_samples": {k: safe_slice(v, 600) for k, v in system.get('script_contents', {}).items() if isinstance(v, (str, list))},
                 "ci_pipelines": system.get('ci_workflows', []),
                 "infrastructure": system.get('infrastructure', [])
             }
