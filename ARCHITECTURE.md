@@ -1,99 +1,44 @@
-# RepoLens Architecture
+# SYSTEM_ARCHITECTURE_SPECIFICATION
 
-## Overview
-
-RepoLens is a **modular, layered SaaS system** designed for scalability, explainability, and low-risk AI integration. The system separates **deterministic static analysis** from the **AI explanation layer**, preventing hallucinations or tunnel vision.
+RepoLens follows a distributed analysis pattern optimized for deep repository indexing and secure code execution.
 
 ---
 
-## Layers
+### CORE_SERVICES
 
-### 1. Repository Intake
-- **Responsibilities:** Clone, sanitize, and sandbox repos
-- **Tech:** Node.js / Python
-- **Security:** Read-only, auto-cleanup
+#### 1. API_GATEWAY (NESTJS)
+- Protocol: REST / JSON.
+- Responsibility: User authentication, scan job orchestration, and results distribution.
+- Auth: Better Auth (Frontend) + JWT (Backend).
 
-### 2. Language & Project Detection
-- Auto-detect language(s), framework, package manager
-- Extract runtime metadata
-- Output structured JSON for downstream analysis
+#### 2. ANALYSIS_CORE (PYTHON)
+- Language: Python 3.11+.
+- Primary Engine: Tree-sitter for AST parsing.
+- Intelligence: Gemini 2.0 via Google Generative AI SDK.
+- Sandbox: Native Docker Engine (Mounted /var/run/docker.sock).
 
-### 3. Static Analysis
-- AST parsing for JS/TS, Python
-- Directory classification: entry points, core, config, tests
-- Dependency graph generation
-- Dead code detection, circular dependency analysis
-
-### 4. Risk & Health Scoring
-- JSON-based rules engine
-- Maintains explainable metrics:
-  - Tech debt
-  - Test coverage
-  - Complexity
-  - Maintenance risk score
-
-### 5. AI Explanation Layer
-- Inputs only deterministic outputs
-- Provides human-readable summaries:
-  - Purpose
-  - Entry points
-  - Risk explanations
-- Confidence-tagged
-- No speculative or hallucinated outputs
-
-### 6. Output / Reporting Layer
-- Web dashboard + CLI
-- Exportable:
-  - Architecture diagrams (SVG)
-  - Risk reports
-  - README improvement reports
-
-### 7. API Layer
-- REST endpoints:
-  - `POST /scan` → submit repo
-  - `GET /status/:id` → scan status
-  - `GET /results/:id` → scan results
-- Async job processing for large repos
+#### 3. KNOWLEDGE_INDEX (DATABASE)
+- Metadata: PostgreSQL (Neon).
+- Queue: Redis (Upstash).
+- Semantic: Vectorize (Cloudflare).
 
 ---
 
-## Technology Stack
+### DATA_FLOW_PROTOCOL
 
-- Backend: Node.js / Python
-- AI: OpenAI API (explanation-only)
-- Frontend: Next.js
-- Auth: Better Auth (with Prisma adapter)
-- Job Queue: BullMQ / RabbitMQ
-- Storage: Temp sandbox, optional DB for history
-
----
-
-## Data Flow
-
-```
-[User submits repo URL]
-          |
-          v
-[Repo Intake & Sandbox]
-          |
-          v
-[Language Detection & Metadata Extraction]
-          |
-          v
-[Static Analysis Layer] --> [Rules Engine] --> [Structured JSON]
-          |
-          v
-[AI Explanation Layer] --> [Readable Summaries & Insights]
-          |
-          v
-[Output Layer] --> CLI / Dashboard / Reports
-```
+1. **INTAKE**: User submits GitHub URL.
+2. **ORCHESTRATION**: API adds job to BullMQ.
+3. **CLONING**: Worker clones source to ephemeral /tmp sandbox.
+4. **ANALYSIS**: Tree-sitter parses syntax; SystemAnalyzer parses workflows.
+5. **SYNTHESIS**: Gemini LLM generates structural Wiki chapters.
+6. **INDEXING**: Embeddings generated and pushed to Cloudflare Vectorize.
+7. **PERSISTENCE**: Results stored in PostgreSQL; cleanup initiated.
 
 ---
 
-## Design Principles
+### SECURITY_MODEL
 
-- **Explainable AI:** Never infer outside analysis
-- **Modular & Extensible:** Add new language parsers or heuristics easily
-- **Security-first:** No arbitrary code execution
-- **Performance-aware:** Async processing for large repos
+- Ephemeral storage for all code clones.
+- Isolated container runtime for all code execution (Sandbox).
+- Zero internet access for sandbox containers.
+- Encrypted secrets at rest.
