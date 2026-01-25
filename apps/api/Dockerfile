@@ -11,26 +11,24 @@ RUN turbo prune --scope=@repolens/api --docker
 FROM base AS installer
 WORKDIR /app
 
-# Configure pnpm to hoist dependencies (makes node_modules self-contained)
+# Configure pnpm to hoist dependencies (makes node_modules more predictable)
 RUN pnpm config set shamefully-hoist true
 
-# First copy only the configuration files
+# Copy configuration files
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Install all dependencies
+# Install ALL dependencies (including devDeps for build)
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Copy the full source
+# Copy source and build
 COPY --from=builder /app/out/full/ .
-
-# Generate Prisma and build
 RUN pnpm dlx prisma generate --schema=./packages/database/prisma/schema.prisma || pnpm dlx prisma generate --schema=./prisma/schema.prisma
 RUN pnpm run build --filter=@repolens/api
 
-# Re-install only production dependencies
-# Hoisting ensures that the node_modules copied later will work
-RUN rm -rf node_modules && pnpm install --prod --frozen-lockfile --ignore-scripts
+# Prune development dependencies
+# This keeps the generated Prisma client because we moved 'prisma' to dependencies
+RUN pnpm prune --prod --ignore-scripts
 
 FROM base AS runner
 WORKDIR /app
@@ -38,12 +36,18 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
+# Copy built application and the pruned node_modules
 COPY --from=installer --chown=nestjs:nodejs /app/apps/api/dist ./dist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
 COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Ensure the .prisma directory is copied correctly (Prisma 7 requirement)
+# It's usually inside node_modules but pnpm can nest it
+COPY --from=installer --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 USER nestjs
 
 EXPOSE 3001
 
+# Verify the prisma client exists before starting (Robustness check)
 CMD ["node", "dist/main.js"]
