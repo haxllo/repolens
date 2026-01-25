@@ -27,6 +27,7 @@ RUN pnpm dlx prisma generate --schema=./packages/database/prisma/schema.prisma |
 RUN pnpm run build --filter=@repolens/api
 
 # Prune development dependencies
+# This keeps the generated Prisma client because we moved 'prisma' to dependencies
 RUN pnpm prune --prod --ignore-scripts
 
 FROM base AS runner
@@ -36,17 +37,13 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
 # Copy built application and the pruned node_modules
+# This copies everything, including hidden .prisma folders if they exist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/api/dist ./dist
 COPY --from=installer --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
 COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
-
-# Ensure the .prisma directory is copied correctly (Prisma 7 requirement)
-# It's usually inside node_modules but pnpm can nest it
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 USER nestjs
 
 EXPOSE 3001
 
-# Verify the prisma client exists before starting (Robustness check)
 CMD ["node", "dist/main.js"]
