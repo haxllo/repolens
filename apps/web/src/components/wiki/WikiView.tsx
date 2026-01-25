@@ -14,7 +14,9 @@ import {
   Zap,
   Command,
   Maximize2,
-  X
+  X,
+  Plus,
+  Minus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import MermaidBlock from './MermaidBlock'
@@ -100,13 +102,17 @@ const SystemSpecHeader = ({ system }: { system: WikiViewProps['data']['system'] 
 
 const WikiImage = ({ src, alt }: { src: string, alt: string }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [scale, setScale] = useState(1);
+
+    const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
+    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
 
     return (
         <>
-            <div className="my-12 relative group cursor-zoom-in border border-white/5 bg-black rounded-lg overflow-hidden" onClick={() => setIsOpen(true)}>
+            <div className="my-12 relative group cursor-zoom-in border border-white/5 bg-black rounded-none overflow-hidden" onClick={() => { setIsOpen(true); setScale(1); }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt={alt} className="w-full h-auto object-cover max-h-[600px] grayscale hover:grayscale-0 transition-all duration-700" />
-                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-white/10 p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-4 right-4 bg-black border border-white/10 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Maximize2 className="w-4 h-4 text-white/50" />
                 </div>
                 {alt && (
@@ -122,24 +128,50 @@ const WikiImage = ({ src, alt }: { src: string, alt: string }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black p-10 cursor-zoom-out"
-                        onClick={() => setIsOpen(false)}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-10"
                     >
+                        {/* Control Bar (Top) */}
+                        <div className="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 p-1 z-[110]">
+                            <button 
+                                onClick={handleZoomOut}
+                                className="p-3 text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+                                title="Zoom Out"
+                            >
+                                <Minus className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-4 bg-white/10 mx-2" />
+                            <button 
+                                onClick={handleZoomIn}
+                                className="p-3 text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+                                title="Zoom In"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-4 bg-white/10 mx-2" />
+                            <button 
+                                onClick={() => setIsOpen(false)}
+                                className="p-3 text-white/40 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                title="Close"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
                         <motion.div 
                             initial={{ scale: 0.98 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.98 }}
-                            className="relative max-w-7xl max-h-full"
-                            onClick={(e) => e.stopPropagation()}
+                            className="relative w-full h-full flex items-center justify-center overflow-auto cursor-zoom-out"
+                            onClick={() => setIsOpen(false)}
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={src} alt={alt} className="w-full h-full object-contain shadow-[0_0_100px_rgba(0,0,0,0.5)]" />
-                            <button 
-                                onClick={() => setIsOpen(false)}
-                                className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
+                            <motion.img 
+                                src={src} 
+                                alt={alt} 
+                                style={{ scale }}
+                                className="max-w-full max-h-full object-contain transition-transform duration-200"
+                                onClick={(e) => e.stopPropagation()}
+                            />
                         </motion.div>
                     </motion.div>
                 )}
@@ -164,7 +196,7 @@ const CodeBlock = ({ className, children, ...props }: any) => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/execution`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ language: language === 'python' ? 'python' : 'javascript', code })
+        body: JSON.stringify({ language: language === 'python' ? 'python' : 'javascript', code }) 
       });
       const { jobId } = await res.json();
       const poll = setInterval(async () => {
@@ -198,7 +230,7 @@ const CodeBlock = ({ className, children, ...props }: any) => {
   };
 
   return (
-    <div className="my-12 border border-white/10 bg-[#050505] rounded-lg overflow-hidden group">
+    <div className="my-12 border border-white/10 bg-[#050505] rounded-none overflow-hidden group">
       <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border-b border-white/5">
         <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">{language || 'code'}</span>
         {isRunnable && (
@@ -231,7 +263,7 @@ const CodeBlock = ({ className, children, ...props }: any) => {
 
 const WikiComponents = () => ({
   Blueprint: ({ filter }: { filter?: string }) => (
-    <div className="my-16 h-[400px] border border-white/5 bg-black rounded-lg flex flex-col items-center justify-center relative">
+    <div className="my-16 h-[400px] border border-white/5 bg-black rounded-none flex flex-col items-center justify-center relative">
       <div className="w-12 h-12 border border-white/10 flex items-center justify-center mb-4">
         <Zap className="w-4 h-4 text-white/20" />
       </div>
@@ -240,7 +272,7 @@ const WikiComponents = () => ({
   ),
   Risk: ({ level }: { level: string }) => (
     <span className={cn(
-      "inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase mx-1 border",
+      "inline-flex items-center px-2 py-0.5 rounded-none text-[9px] font-bold uppercase mx-1 border",
       level === 'high' ? "bg-red-500/5 text-red-500/70 border-red-500/10" : "bg-lime-500/5 text-lime-500/70 border-lime-500/10"
     )}>
       {level} Risk
@@ -251,12 +283,12 @@ const WikiComponents = () => ({
     const language = match ? match[1] : '';
     if (language === 'mermaid') return <MermaidBlock chart={String(children).replace(/\n$/, '')} />;
     return !inline ? <CodeBlock className={className} {...props}>{children}</CodeBlock> : 
-    <code className="bg-white/5 px-1 py-0.5 rounded text-white/80 font-mono text-xs" {...props}>{children}</code>
+    <code className="bg-white/5 px-1 py-0.5 rounded-none text-white/80 font-mono text-xs" {...props}>{children}</code>
   },
   img: ({ src, alt }: any) => <WikiImage src={src} alt={alt} />,
-  h2: ({ children }: any) => <h2 className="text-3xl font-bold text-white mt-24 mb-8 tracking-tight">{children}</h2>,
-  h3: ({ children }: any) => <h3 className="text-xl font-bold text-white/80 mt-16 mb-6 tracking-tight">{children}</h3>,
-  p: ({ children }: any) => <p className="text-lg text-white/50 leading-[1.8] mb-8">{children}</p>,
+  h2: ({ children }: any) => <h2 className="text-3xl font-bold text-white mt-24 mb-8 tracking-tight uppercase tracking-[0.1em]">{children}</h2>,
+  h3: ({ children }: any) => <h3 className="text-xl font-bold text-white/80 mt-16 mb-6 tracking-tight uppercase tracking-[0.1em]">{children}</h3>,
+  p: ({ children }: any) => <p className="text-lg text-white/50 leading-[1.8] mb-8 font-medium">{children}</p>,
   li: ({ children }: any) => <li className="text-lg text-white/40 leading-[1.8] mb-3 list-disc ml-6">{children}</li>,
   ul: ({ children }: any) => <ul className="mb-8">{children}</ul>
 });
@@ -271,7 +303,7 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
   return (
     <div className="max-w-4xl mx-auto py-20 min-h-screen">
       {/* Chapter Navigator (Floating Minimal) */}
-      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-40 px-6 py-3 bg-black border border-white/10 rounded-none flex items-center gap-8 shadow-2xl">
+      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 bg-black border border-white/10 rounded-none flex items-center gap-8 shadow-2xl">
         <div className="flex items-center gap-3 pr-8 border-r border-white/10">
           <FileText className="w-4 h-4 text-lime-400" />
           <span className="text-[11px] font-bold text-white tracking-widest uppercase truncate max-w-[150px]">
@@ -285,7 +317,7 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
               onClick={() => setActiveView(i)}
               className={cn(
                 "text-[10px] font-bold uppercase tracking-widest transition-colors",
-                activeChapter === i ? "text-lime-400" : "text-white/30 hover:text-white/50"
+                activeChapter === i ? "text-lime-400" : "text-white/20 hover:text-white/50"
               )}
             >
               0{i + 1}
@@ -308,11 +340,11 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
               <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] mb-6">
                 Chapter 0{activeChapter + 1} / {chapters.length}
               </div>
-              <h1 className="text-6xl md:text-8xl font-bold text-white tracking-tighter mb-12 leading-[0.85]">
+              <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-12 leading-[0.85] uppercase">
                 {chapters[activeChapter].title}
               </h1>
               {activeChapter === 0 && data.summary && (
-                <p className="text-2xl text-white/40 leading-relaxed font-medium max-w-2xl italic">
+                <p className="text-2xl text-white/40 leading-relaxed font-medium max-w-2xl border-l border-white/10 pl-8 italic">
                   {data.summary}
                 </p>
               )}
@@ -338,12 +370,12 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
               </div>
               <div className="flex gap-12">
                 {activeChapter > 0 && (
-                  <button onClick={() => setActiveView(activeChapter - 1)} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white">
+                  <button onClick={() => setActiveView(activeChapter - 1)} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
                     Previous
                   </button>
                 )}
                 {activeChapter < chapters.length - 1 && (
-                  <button onClick={() => setActiveView(activeChapter + 1)} className="text-[10px] font-black uppercase tracking-widest text-lime-400 hover:text-lime-300">
+                  <button onClick={() => setActiveView(activeChapter + 1)} className="text-[10px] font-black uppercase tracking-widest text-lime-400 hover:text-lime-300 transition-colors">
                     Next Chapter
                   </button>
                 )}
