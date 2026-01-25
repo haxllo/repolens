@@ -10,14 +10,27 @@ RUN turbo prune --scope=@repolens/api --docker
 
 FROM base AS installer
 WORKDIR /app
+
+# Configure pnpm to hoist dependencies (makes node_modules self-contained)
+RUN pnpm config set shamefully-hoist true
+
+# First copy only the configuration files
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-# pnpm install is faster and uses less space
-RUN pnpm install --frozen-lockfile --ignore-scripts
 
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy the full source
 COPY --from=builder /app/out/full/ .
+
+# Generate Prisma and build
 RUN pnpm dlx prisma generate --schema=./packages/database/prisma/schema.prisma || pnpm dlx prisma generate --schema=./prisma/schema.prisma
 RUN pnpm run build --filter=@repolens/api
+
+# Re-install only production dependencies
+# Hoisting ensures that the node_modules copied later will work
+RUN rm -rf node_modules && pnpm install --prod --frozen-lockfile --ignore-scripts
 
 FROM base AS runner
 WORKDIR /app
