@@ -26,12 +26,13 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
     // 1. Semantic Analysis (SCIP Lite)
     let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
-    let symbols_table = &semantic.symbols; // Access field directly
     
     let mut symbols = Vec::new();
-    for symbol_id in symbols_table.symbol_ids() {
-        let name = symbols_table.get_name(symbol_id).to_string();
-        let flags = symbols_table.get_flags(symbol_id);
+    
+    // Attempting scopeless_symbols() which is a known pattern in some OXC versions
+    for symbol_id in semantic.scopeless_symbols().symbol_ids() {
+        let name = semantic.scopeless_symbols().get_name(symbol_id).to_string();
+        let flags = semantic.scopeless_symbols().get_flags(symbol_id);
         
         let kind = if flags.is_function() { "function" }
                   else if flags.is_class() { "class" }
@@ -40,14 +41,12 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
 
         let references = semantic.symbol_references(symbol_id).count();
         
-        // Only track significant top-level-ish symbols for now
         if kind != "other" {
             symbols.push(Symbol { name, kind: kind.to_string(), references });
         }
     }
 
     // 2. AST Traversal for Metadata
-    // In oxc 0.110.0, Statement inherits ModuleDeclaration variants directly
     for item in &program.body {
         match item {
             Statement::ImportDeclaration(import_decl) => {
