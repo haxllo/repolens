@@ -31,9 +31,11 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
     const edges: Edge[] = [];
     const files = data?.ast?.files || [];
     const deps = data?.dependencies?.graph?.edges || [];
+    const fileRisks = data?.complexity?.fileRisks || {};
 
     files.forEach((file: any) => {
-      if (filter === 'high-risk' && (file.riskScore || 0) < 50) return;
+      const risk = fileRisks[file.path] || 0;
+      if (filter === 'high-risk' && risk < 50) return;
 
       nodes.push({
         id: file.path,
@@ -41,7 +43,7 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
         data: { 
             label: file.path.split('/').pop(),
             type: 'file',
-            riskScore: file.riskScore || 0,
+            riskScore: risk,
             loc: file.loc || 0,
             isEntryPoint: data?.ast?.entryPoints?.includes(file.path)
         },
