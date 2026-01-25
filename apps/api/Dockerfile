@@ -4,7 +4,7 @@ RUN npm install -g pnpm
 
 FROM base AS builder
 WORKDIR /app
-RUN pnpm add -g turbo
+RUN npm install -g turbo
 COPY . .
 RUN turbo prune --scope=@repolens/api --docker
 
