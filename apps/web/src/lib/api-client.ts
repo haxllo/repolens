@@ -36,11 +36,23 @@ export class ApiClient {
     })
   }
 
-  async get<T>(path: string): Promise<T> {
-    // Add userId=guest param for guest users
+  private async getUserId(): Promise<string> {
+    if (typeof window !== 'undefined') {
+      const session = await authClient.getSession();
+      return session.data?.user.id || 'guest';
+    }
+    return 'guest';
+  }
+
+  private addUserIdToPath(path: string, userId: string): string {
     const separator = path.includes('?') ? '&' : '?'
-    const pathWithUserId = `${path}${separator}userId=guest`
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${pathWithUserId}`)
+    return `${path}${separator}userId=${userId}`
+  }
+
+  async get<T>(path: string): Promise<T> {
+    const userId = await this.getUserId()
+    const finalPath = this.addUserIdToPath(path, userId)
+    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`)
     
     if (!response.ok) {
       throw new Error(`Request failed: ${response.statusText}`)
@@ -50,7 +62,9 @@ export class ApiClient {
   }
 
   async post<T>(path: string, data: any): Promise<T> {
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${path}`, {
+    const userId = await this.getUserId()
+    const finalPath = this.addUserIdToPath(path, userId)
+    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`, {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -63,7 +77,9 @@ export class ApiClient {
   }
 
   async delete<T>(path: string): Promise<T> {
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${path}`, {
+    const userId = await this.getUserId()
+    const finalPath = this.addUserIdToPath(path, userId)
+    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`, {
       method: 'DELETE',
     })
     
