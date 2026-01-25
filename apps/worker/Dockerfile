@@ -1,5 +1,5 @@
 # Stage 1: Build the Rust Oxidizer
-FROM rust:1.75-slim AS rust-builder
+FROM rust:latest AS rust-builder
 
 WORKDIR /build
 # Copy only the necessary parts for the Rust build
@@ -9,7 +9,7 @@ WORKDIR /build/apps/oxidizer
 RUN cargo build --release
 
 # Stage 2: Final Worker Image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
