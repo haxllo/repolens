@@ -3,7 +3,8 @@ import logging
 import re
 import json
 import subprocess
-from typing import Dict, Any, List, Set
+import asyncio
+from typing import Dict, Any, List, Set, Optional
 from tree_sitter import Language, Parser
 import tree_sitter_javascript as tsjs
 import tree_sitter_typescript as tsts
