@@ -15,19 +15,38 @@ export class ScanService {
   async createScan(createScanDto: CreateScanDto, userId?: string) {
     const scanId = randomUUID()
 
-    // Create scan in database
+    // 1. Extract repository full name (owner/repo)
+    let repoFullName = createScanDto.repoUrl.replace('https://github.com/', '').replace('.git', '')
+    if (repoFullName.endsWith('/')) repoFullName = repoFullName.slice(0, -1)
+
+    // 2. Find or create the repository record
+    const repository = await this.prisma.repository.upsert({
+      where: { fullName: repoFullName },
+      update: { 
+        url: createScanDto.repoUrl,
+        lastScannedAt: new Date()
+      },
+      create: {
+        fullName: repoFullName,
+        url: createScanDto.repoUrl,
+        lastScannedAt: new Date()
+      }
+    })
+
+    // 3. Create scan in database linked to repository
     const scan = await this.prisma.scan.create({
       data: {
         id: scanId,
         userId: userId || null,
+        repositoryId: repository.id,
         repoUrl: createScanDto.repoUrl,
         branch: createScanDto.branch || 'main',
         status: 'QUEUED',
       },
     })
 
-    // Add job to queue
-    const job = await this.analysisQueue.add(
+    // 4. Add job to queue
+    await this.analysisQueue.add(
       'analyze-repo',
       {
         scanId,
@@ -43,6 +62,7 @@ export class ScanService {
 
     return {
       scanId: scan.id,
+      repositoryId: repository.id,
       status: 'queued',
       message: 'Repository scan has been queued for analysis',
     }
@@ -68,6 +88,7 @@ export class ScanService {
     const response: any = {
       scanId: scan.id,
       status: scan.status.toLowerCase(),
+      repositoryId: scan.repositoryId,
       progress,
       createdAt: scan.createdAt,
       repoUrl: scan.repoUrl,
@@ -111,6 +132,7 @@ export class ScanService {
     return {
       scanId: scan.id,
       status: 'completed',
+      repositoryId: scan.repositoryId,
       repoUrl: scan.repoUrl,
       branch: scan.branch,
       createdAt: scan.createdAt,
