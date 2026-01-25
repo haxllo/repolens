@@ -1,24 +1,23 @@
 import os
 import json
 import logging
-from typing import Dict, Any, List
-import google.generativeai as genai
+from typing import Dict, Any, List, Optional
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
 class AIExplainer:
-    """Generate AI-powered Wiki documentation using various AI providers"""
+    """Generate AI-powered Wiki documentation using the modern Google GenAI SDK"""
     
     def __init__(self):
         gemini_key = os.getenv('GEMINI_API_KEY')
         openrouter_key = os.getenv('OPENROUTER_API_KEY')
         
         if gemini_key:
-            genai.configure(api_key=gemini_key)
             self.provider = 'gemini'
-            # Using confirmed available 2.0 Flash model from logs
+            self.client = genai.Client(api_key=gemini_key)
             self.model_name = 'gemini-2.0-flash'
-            self._init_gemini()
             self.enabled = True
             logger.info(f'Using Gemini AI with model: {self.model_name}')
         elif openrouter_key:
@@ -31,17 +30,6 @@ class AIExplainer:
             logger.warning('No AI API key found, Wiki generation disabled')
             self.provider = None
             self.enabled = False
-
-    def _init_gemini(self):
-        """Initialize or re-initialize the Gemini model"""
-        self.model = genai.GenerativeModel(
-            model_name=self.model_name,
-            system_instruction="""You are a Principal Systems Architect and Technical Lead. 
-            Your goal is to produce an industrial-grade "Architectural Operating System" manual for software repositories.
-            Your writing style is authoritative, precise, and high-density—mimicking the documentation of complex systems like Kubernetes or Linux.
-            Focus on internal mechanics, data flow protocols, and structural integrity.
-            Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
-        )
 
     async def explain(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -65,18 +53,26 @@ class AIExplainer:
             return self._generate_fallback_wiki(analysis_data)
     
     async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate Wiki using Gemini API with structured JSON output and fallback"""
+        """Generate Wiki using the new Google GenAI SDK with structured JSON output"""
         
-        # Phase 1: High-Level Architecture (The Standard Prompt)
         prompt = self._build_wiki_prompt(analysis_data)
-        
+        system_instruction = """You are a Principal Systems Architect and Technical Lead. 
+Your goal is to produce an industrial-grade "Architectural Operating System" manual for software repositories.
+Your writing style is authoritative, precise, and high-density—mimicking the documentation of complex systems like Kubernetes or Linux.
+Focus on internal mechanics, data flow protocols, and structural integrity.
+Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
+
         try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
                     response_mime_type="application/json",
                 )
             )
+            
+            # Using .text property for the generated response
             wiki_content = json.loads(response.text)
             
             return {
@@ -87,15 +83,12 @@ class AIExplainer:
             }
 
         except Exception as e:
-            if "429" in str(e) or "quota" in str(e).lower():
+            err_msg = str(e).lower()
+            if "429" in err_msg or "quota" in err_msg:
                 logger.warning("AI_CORE: Quota exceeded. Informing user.")
                 return self._generate_quota_standby_wiki(analysis_data)
             
-            if self.model_name != 'gemini-flash-latest':
-                logger.warning(f"Primary model {self.model_name} failed, trying gemini-flash-latest fallback. Error: {str(e)}")
-                self.model_name = 'gemini-flash-latest'
-                self._init_gemini()
-                return await self._explain_with_gemini(analysis_data)
+            logger.error(f"Gemini generation error: {e}")
             raise e
 
     def _generate_quota_standby_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:

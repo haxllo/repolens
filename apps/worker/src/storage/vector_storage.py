@@ -1,7 +1,8 @@
 import os
 import logging
-import google.generativeai as genai
 from typing import List, Dict, Any, Optional
+from google import genai
+from google.genai import types
 from pinecone import Pinecone
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,7 @@ class VectorStorage:
     """
     Handles semantic code indexing using Pinecone and Gemini Embeddings.
     Provides the memory layer for RAG-based architectural chat.
+    Uses the modern Google GenAI SDK.
     """
     
     def __init__(self):
@@ -17,12 +19,12 @@ class VectorStorage:
         self.pinecone_key = os.getenv('PINECONE_API_KEY')
         self.index_name = os.getenv('PINECONE_INDEX_NAME', 'repolens-rag')
         
-        # Gemini Config (Latest text-embedding-004 produces 768 dimensions)
+        # Gemini Config
         gemini_key = os.getenv('GEMINI_API_KEY')
         
         if gemini_key and self.pinecone_key:
-            genai.configure(api_key=gemini_key)
-            self.embedding_model = 'models/text-embedding-004'
+            self.client = genai.Client(api_key=gemini_key)
+            self.embedding_model = 'text-embedding-004' # Produces 768 dimensions
             
             try:
                 self.pc = Pinecone(api_key=self.pinecone_key)
@@ -42,12 +44,13 @@ class VectorStorage:
             return []
             
         try:
-            result = genai.embed_content(
+            result = self.client.models.embed_content(
                 model=self.embedding_model,
-                content=text_chunks,
-                task_type="retrieval_document"
+                contents=text_chunks,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
             )
-            return result['embedding']
+            # The new SDK returns a list of embedding objects, each with a .values attribute
+            return [e.values for e in result.embeddings]
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {str(e)}")
             return []
@@ -80,12 +83,13 @@ class VectorStorage:
 
         try:
             # Generate query embedding
-            embedding_result = genai.embed_content(
+            embedding_result = self.client.models.embed_content(
                 model=self.embedding_model,
-                content=query_text,
-                task_type="retrieval_query"
+                contents=query_text,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
             )
-            query_vector = embedding_result['embedding']
+            # Take the first embedding's values
+            query_vector = embedding_result.embeddings[0].values
 
             # Query Pinecone
             results = self.index.query(
