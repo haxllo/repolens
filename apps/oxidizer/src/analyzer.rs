@@ -1,5 +1,5 @@
-use oxc_ast::ast::{Statement, ModuleDeclaration, Declaration};
-use oxc_semantic::{SemanticBuilder, SymbolId};
+use oxc_ast::ast::{Statement, Declaration};
+use oxc_semantic::SemanticBuilder;
 use serde::Serialize;
 
 #[derive(Serialize, Debug, Clone)]
@@ -17,16 +17,16 @@ pub struct AnalysisResult {
     pub symbols: Vec<Symbol>,
 }
 
-pub fn analyze_program(program: &oxc_ast::ast::Program, source_text: &str) -> AnalysisResult {
+pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> AnalysisResult {
     let mut functions = 0;
     let mut classes = 0;
     let mut imports = Vec::new();
     let mut exports = Vec::new();
 
     // 1. Semantic Analysis (SCIP Lite)
-    let semantic_ret = SemanticBuilder::new(source_text).build(program);
+    let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
-    let symbols_table = semantic.symbols();
+    let symbols_table = &semantic.symbols; // Access field directly
     
     let mut symbols = Vec::new();
     for symbol_id in symbols_table.symbol_ids() {
@@ -47,36 +47,32 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, source_text: &str) -> An
     }
 
     // 2. AST Traversal for Metadata
+    // In oxc 0.110.0, Statement inherits ModuleDeclaration variants directly
     for item in &program.body {
         match item {
-            Statement::ModuleDeclaration(module_decl) => {
-                match &**module_decl {
-                    ModuleDeclaration::ImportDeclaration(import_decl) => {
-                        imports.push(import_decl.source.to_string());
-                    }
-                    ModuleDeclaration::ExportNamedDeclaration(export_decl) => {
-                        if let Some(decl) = &export_decl.declaration {
-                            match decl {
-                                Declaration::FunctionDeclaration(_) => {
-                                    functions += 1;
-                                    exports.push("function".to_string());
-                                }
-                                Declaration::ClassDeclaration(_) => {
-                                    classes += 1;
-                                    exports.push("class".to_string());
-                                }
-                                _ => {}
-                            }
+            Statement::ImportDeclaration(import_decl) => {
+                imports.push(import_decl.source.to_string());
+            }
+            Statement::ExportNamedDeclaration(export_decl) => {
+                if let Some(decl) = &export_decl.declaration {
+                    match decl {
+                        Declaration::FunctionDeclaration(_) => {
+                            functions += 1;
+                            exports.push("function".to_string());
                         }
+                        Declaration::ClassDeclaration(_) => {
+                            classes += 1;
+                            exports.push("class".to_string());
+                        }
+                        _ => {}
                     }
-                    ModuleDeclaration::ExportDefaultDeclaration(_) => {
-                        exports.push("default".to_string());
-                    }
-                    ModuleDeclaration::ExportAllDeclaration(export_all) => {
-                        exports.push(format!("all_from_{}", export_all.source));
-                    }
-                    _ => {}
                 }
+            }
+            Statement::ExportDefaultDeclaration(_) => {
+                exports.push("default".to_string());
+            }
+            Statement::ExportAllDeclaration(export_all) => {
+                exports.push(format!("all_from_{}", export_all.source));
             }
             Statement::FunctionDeclaration(_) => functions += 1,
             Statement::ClassDeclaration(_) => classes += 1,
