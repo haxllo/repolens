@@ -1,20 +1,52 @@
 use oxc_ast::ast::{Statement, ModuleDeclaration, Declaration};
-use oxc_ast::AstKind;
-use oxc_ast::ast::ExportDeclaration;
+use oxc_semantic::{SemanticBuilder, SymbolId};
+use serde::Serialize;
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Symbol {
+    pub name: String,
+    pub kind: String,
+    pub references: usize,
+}
 
 pub struct AnalysisResult {
     pub functions: usize,
     pub classes: usize,
     pub imports: Vec<String>,
     pub exports: Vec<String>,
+    pub symbols: Vec<Symbol>,
 }
 
-pub fn analyze_program(program: &oxc_ast::ast::Program) -> AnalysisResult {
+pub fn analyze_program(program: &oxc_ast::ast::Program, source_text: &str) -> AnalysisResult {
     let mut functions = 0;
     let mut classes = 0;
     let mut imports = Vec::new();
     let mut exports = Vec::new();
 
+    // 1. Semantic Analysis (SCIP Lite)
+    let semantic_ret = SemanticBuilder::new(source_text).build(program);
+    let semantic = semantic_ret.semantic;
+    let symbols_table = semantic.symbols();
+    
+    let mut symbols = Vec::new();
+    for symbol_id in symbols_table.symbol_ids() {
+        let name = symbols_table.get_name(symbol_id).to_string();
+        let flags = symbols_table.get_flags(symbol_id);
+        
+        let kind = if flags.is_function() { "function" }
+                  else if flags.is_class() { "class" }
+                  else if flags.is_variable() { "variable" }
+                  else { "other" };
+
+        let references = semantic.symbol_references(symbol_id).count();
+        
+        // Only track significant top-level-ish symbols for now
+        if kind != "other" {
+            symbols.push(Symbol { name, kind: kind.to_string(), references });
+        }
+    }
+
+    // 2. AST Traversal for Metadata
     for item in &program.body {
         match item {
             Statement::ModuleDeclaration(module_decl) => {
@@ -57,5 +89,6 @@ pub fn analyze_program(program: &oxc_ast::ast::Program) -> AnalysisResult {
         classes,
         imports,
         exports,
+        symbols,
     }
 }

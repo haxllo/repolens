@@ -34,8 +34,12 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
     const fileRisks = data?.complexity?.fileRisks || {};
 
     files.forEach((file: any) => {
-      const risk = fileRisks[file.path] || 0;
-      if (filter === 'high-risk' && risk < 50) return;
+      // Handle both complexity fileRisks and general riskScores
+      const complexityRisk = data?.complexity?.fileRisks?.[file.path] || 0;
+      const generalRisk = data?.riskScores?.file_risks?.find((r: any) => r.file_path === file.path)?.risk_score * 10 || 0;
+      const risk = Math.max(complexityRisk, generalRisk);
+
+      if (filter === 'high-risk' && risk < 30) return;
 
       nodes.push({
         id: file.path,
@@ -135,8 +139,12 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
             <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Healthy Record</span>
          </div>
          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-1.5 bg-orange-500 rounded-none" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Moderate Complexity</span>
+         </div>
+         <div className="flex items-center gap-3">
             <div className="w-1.5 h-1.5 bg-red-500 rounded-none" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Complexity Warning</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Critical Warning</span>
          </div>
       </div>
     </div>

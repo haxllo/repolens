@@ -4,12 +4,16 @@ import { FileCode, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BlueprintNode = ({ data }: any) => {
-  const isRisk = data.riskScore > 70;
+  const risk = data.riskScore || 0;
+  const isHighRisk = risk > 70;
+  const isMediumRisk = risk > 30 && risk <= 70;
 
   return (
     <div className={cn(
       "relative min-w-[200px] bg-black border transition-all duration-500 rounded-none",
-      isRisk ? "border-red-500/40" : "border-white/10",
+      isHighRisk ? "border-red-500/40 shadow-[inset_0_0_20px_rgba(239,68,68,0.05)]" : 
+      isMediumRisk ? "border-orange-500/30 shadow-[inset_0_0_20px_rgba(249,115,22,0.02)]" :
+      "border-white/10",
       data.isSelected && "border-lime-400 shadow-[0_0_30px_rgba(163,230,53,0.1)]"
     )}>
       <Handle type="target" position={Position.Top} className="!bg-white/10 !w-full !h-0.5 !rounded-none !border-none" />
@@ -22,21 +26,29 @@ const BlueprintNode = ({ data }: any) => {
              {data.label}
            </span>
         </div>
-        {isRisk && <ShieldAlert className="w-3 h-3 text-red-500/50" />}
+        {isHighRisk && <ShieldAlert className="w-3 h-3 text-red-500/50" />}
       </div>
 
       {/* Metrics Body */}
       <div className="p-4 space-y-3">
         <div className="flex justify-between items-center">
-           <div className="text-[8px] font-black uppercase tracking-[0.2em] text-white/20">Metric_LOC</div>
-           <div className="text-[10px] font-mono text-white/40 tabular-nums">{data.loc || '000'}</div>
+           <div className="text-[8px] font-black uppercase tracking-[0.2em] text-white/20">Metric_Risk</div>
+           <div className={cn(
+             "text-[10px] font-mono tabular-nums font-bold",
+             isHighRisk ? "text-red-500" : isMediumRisk ? "text-orange-500" : "text-lime-400"
+           )}>
+             {Math.round(risk)}%
+           </div>
         </div>
         
         {/* Abstract Risk Bar */}
-        <div className="h-px w-full bg-white/5 relative">
+        <div className="h-[2px] w-full bg-white/5 relative">
             <div 
-                className={cn("absolute inset-y-0 left-0", isRisk ? "bg-red-500" : "bg-lime-400")} 
-                style={{ width: `${data.riskScore}%` }}
+                className={cn(
+                  "absolute inset-y-0 left-0 transition-all duration-1000", 
+                  isHighRisk ? "bg-red-500" : isMediumRisk ? "bg-orange-500" : "bg-lime-400"
+                )} 
+                style={{ width: `${risk}%` }}
             />
         </div>
       </div>

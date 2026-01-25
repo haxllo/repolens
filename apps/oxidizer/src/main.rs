@@ -25,6 +25,7 @@ struct FileResult {
     classes: usize,
     imports: Vec<String>,
     exports: Vec<String>,
+    symbols: Vec<analyzer::Symbol>,
     lines: usize,
     error: Option<String>,
 }
@@ -99,7 +100,7 @@ fn process_file(root: &Path, path: &Path) -> FileResult {
         };
     }
 
-    let analysis = analyze_program(&ret.program);
+    let analysis = analyze_program(&ret.program, &source);
 
     FileResult {
         path: rel_path,
@@ -107,6 +108,7 @@ fn process_file(root: &Path, path: &Path) -> FileResult {
         classes: analysis.classes,
         imports: analysis.imports,
         exports: analysis.exports,
+        symbols: analysis.symbols,
         lines,
         error: None,
     }
