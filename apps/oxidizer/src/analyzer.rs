@@ -1,12 +1,15 @@
 use oxc_ast::ast::{Statement, Declaration};
 use oxc_semantic::SemanticBuilder;
 use serde::Serialize;
+use crate::complexity::ComplexityCalculator;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Symbol {
     pub name: String,
     pub kind: String,
     pub references: usize,
+    pub cyclomatic: usize,
+    pub cognitive: usize,
 }
 
 pub struct AnalysisResult {
@@ -17,14 +20,13 @@ pub struct AnalysisResult {
     pub symbols: Vec<Symbol>,
 }
 
-pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> AnalysisResult {
+pub fn analyze_program(program: &oxc_ast::ast::Program, source_text: &str) -> AnalysisResult {
     let mut functions = 0;
     let mut classes = 0;
     let mut imports = Vec::new();
     let mut exports = Vec::new();
 
     // 1. Semantic Analysis (SCIP Lite)
-    // According to docs, SemanticBuilder::new() is correct for 0.110.0
     let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
     let scoping = semantic.scoping();
@@ -39,11 +41,23 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
                   else if flags.is_variable() { "variable" }
                   else { "other" };
 
-        // Cross-check: get_resolved_references returns an Iterator, so we use count()
         let references = scoping.get_resolved_references(symbol_id).count();
         
         if kind != "other" {
-            symbols.push(Symbol { name, kind: kind.to_string(), references });
+            // Get symbol source range for complexity calculation
+            let span = scoping.symbol_span(symbol_id);
+            let symbol_code = &source_text[span.start as usize..span.end as usize];
+            
+            let cyclomatic = ComplexityCalculator::calculate_cyclomatic(symbol_code);
+            let cognitive = ComplexityCalculator::calculate_cognitive(symbol_code);
+
+            symbols.push(Symbol { 
+                name, 
+                kind: kind.to_string(), 
+                references,
+                cyclomatic,
+                cognitive,
+            });
         }
     }
 

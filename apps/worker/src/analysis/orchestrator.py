@@ -88,7 +88,18 @@ class AnalysisOrchestrator:
             
             # Step 6: Phase 2 - Circular dependency detection
             logger.info('Step 6: Detecting circular dependencies')
-            circular_deps = analyze_circular_dependencies(dependencies)
+            oxidized = ast_data.get('oxidized_metadata', {})
+            if oxidized.get('active'):
+                logger.info('Using Oxidized (Rust) circular dependency results')
+                # Map Rust format to Orchestrator format
+                circular_deps = {
+                    'has_circular_dependencies': len(oxidized.get('cycles', [])) > 0,
+                    'total_cycles': len(oxidized.get('cycles', [])),
+                    'cycles': oxidized.get('cycles', []),
+                    'oxidized': True
+                }
+            else:
+                circular_deps = analyze_circular_dependencies(dependencies)
             
             # Step 7: Phase 2 - Dead code analysis
             logger.info('Step 7: Analyzing dead code')
@@ -108,10 +119,19 @@ class AnalysisOrchestrator:
             
             # Step 10: Phase 2 - Complexity metrics
             logger.info('Step 10: Analyzing code complexity')
-            complexity_metrics = analyze_complexity(
-                files=ast_data.get('files', []),
-                repo_path=repo_path
-            )
+            if oxidized.get('active'):
+                logger.info('Using Oxidized (Rust) complexity metrics')
+                # Rust already calculated per-symbol complexity in Step 3
+                # We still run the Python summary logic but pass it the Rust-enhanced file list
+                complexity_metrics = analyze_complexity(
+                    files=ast_data.get('files', []),
+                    repo_path=repo_path
+                )
+            else:
+                complexity_metrics = analyze_complexity(
+                    files=ast_data.get('files', []),
+                    repo_path=repo_path
+                )
             
             # Step 11: Generate AI explanations (enhanced with Phase 2 data and structural context)
             logger.info('Step 11: Generating AI explanations')

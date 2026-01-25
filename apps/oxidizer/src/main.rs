@@ -1,4 +1,6 @@
 mod analyzer;
+mod complexity;
+mod graph;
 
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -10,6 +12,7 @@ use serde::Serialize;
 use walkdir::WalkDir;
 use clap::Parser as ClapParser;
 use analyzer::analyze_program;
+use graph::{DependencyGraph, Cycle};
 
 #[derive(ClapParser, Debug)]
 #[command(author, version, about = "High-performance architectural scanner for RepoLens")]
@@ -18,22 +21,31 @@ struct Args {
     path: String,
 }
 
-#[derive(Serialize, Debug, Default)]
-struct FileResult {
-    path: String,
-    functions: usize,
-    classes: usize,
-    imports: Vec<String>,
-    exports: Vec<String>,
-    symbols: Vec<analyzer::Symbol>,
-    lines: usize,
-    error: Option<String>,
+#[derive(Serialize, Debug, Default, Clone)]
+pub struct FileResult {
+    pub path: String,
+    pub functions: usize,
+    pub classes: usize,
+    pub imports: Vec<String>,
+    pub exports: Vec<String>,
+    pub symbols: Vec<analyzer::Symbol>,
+    pub lines: usize,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Debug)]
+struct Summary {
+    total_functions: usize,
+    total_classes: usize,
+    total_lines: usize,
 }
 
 #[derive(Serialize, Debug)]
 struct ScanResult {
     files: Vec<FileResult>,
     total_files: usize,
+    summary: Summary,
+    cycles: Vec<Cycle>,
     execution_mode: String,
 }
 
@@ -64,13 +76,28 @@ fn main() -> anyhow::Result<()> {
         .map(|path| process_file(root_path, path))
         .collect();
 
+    // 3. Build Dependency Graph and Detect Cycles
+    let graph = DependencyGraph::new(&results);
+    let cycles = graph.detect_cycles();
+
+    // 4. Calculate Aggregate Summary
+    let total_functions = results.iter().map(|f| f.functions).sum();
+    let total_classes = results.iter().map(|f| f.classes).sum();
+    let total_lines = results.iter().map(|f| f.lines).sum();
+
     let scan_result = ScanResult {
         total_files: results.len(),
+        summary: Summary {
+            total_functions,
+            total_classes,
+            total_lines,
+        },
         files: results,
+        cycles,
         execution_mode: "OXIDIZED_NATIVE".to_string(),
     };
 
-    // 3. Output JSON for the Python Orchestrator
+    // 5. Output JSON for the Python Orchestrator
     println!("{}", serde_json::to_string_pretty(&scan_result)?);
 
     Ok(())

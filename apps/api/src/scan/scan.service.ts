@@ -128,6 +128,17 @@ export class ScanService {
       updateData.completedAt = new Date()
       if (results) {
         updateData.results = results
+        // Map specific diagnostic fields for specialized queries
+        updateData.languageStats = results.languages || null
+        updateData.dependencies = results.dependencies || null
+        updateData.riskScores = results.riskScores || null
+        updateData.readmeAnalysis = results.readmeAnalysis || null
+        updateData.circularDeps = results.circularDependencies || null
+        updateData.deadCode = results.deadCode || null
+        
+        if (results.processingTime) {
+          updateData.processingTime = results.processingTime
+        }
       }
     }
 

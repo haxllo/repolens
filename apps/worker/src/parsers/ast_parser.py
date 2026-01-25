@@ -78,7 +78,12 @@ class ASTParser:
                 'patterns': {} # High-level architectural patterns found
             },
             'entryPoints': [],
-            'dependencies': [] # Internal module dependency graph (converted to list)
+            'dependencies': [], # Internal module dependency graph (converted to list)
+            'oxidized_metadata': {
+                'cycles': [],
+                'total_files': 0,
+                'active': False
+            }
         }
         
         detected_patterns = {cat: set() for cat in self.patterns.keys()}
@@ -86,6 +91,10 @@ class ASTParser:
         # Use oxidized results as base for JS/TS if available
         processed_files = set()
         if oxidized_results:
+            results['oxidized_metadata']['active'] = True
+            results['oxidized_metadata']['cycles'] = oxidized_results.get('cycles', [])
+            results['oxidized_metadata']['total_files'] = oxidized_results.get('total_files', 0)
+            
             for f in oxidized_results.get('files', []):
                 if not f.get('error'):
                     f['language'] = 'typescript' if f['path'].endswith(('.ts', '.tsx')) else 'javascript'
