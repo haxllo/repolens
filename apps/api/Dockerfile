@@ -19,7 +19,7 @@ COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # Install ALL dependencies (including devDeps for build)
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --ignore-scripts
 
 # Copy source and build
 COPY --from=builder /app/out/full/ .
@@ -27,7 +27,6 @@ RUN pnpm dlx prisma generate --schema=./packages/database/prisma/schema.prisma |
 RUN pnpm run build --filter=@repolens/api
 
 # Prune development dependencies
-# This keeps the generated Prisma client because we moved 'prisma' to dependencies
 RUN pnpm prune --prod --ignore-scripts
 
 FROM base AS runner
