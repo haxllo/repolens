@@ -27,8 +27,9 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
     let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
     
-    // In oxc 0.110.0, symbols are stored in the scoping field
-    let symbols_table = &semantic.scoping.symbols;
+    // In oxc 0.110.0, access symbols through the scoping() method
+    let scoping = semantic.scoping();
+    let symbols_table = &scoping.symbols;
     
     let mut symbols = Vec::new();
     for symbol_id in symbols_table.symbol_ids() {
