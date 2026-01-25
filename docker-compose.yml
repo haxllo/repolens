@@ -39,11 +39,11 @@ services:
     ports:
       - '3001:3001'
     environment:
-      - DATABASE_URL=postgresql://repolens:repolens_dev_password@postgres:5432/repolens
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PORT=3001
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,9 +59,11 @@ services:
       - REDIS_URL=redis://redis:6379
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SANDBOX_DIR=/tmp/repolens-sandboxes
+      - API_URL=http://api:3001
     volumes:
       - /tmp/repolens-sandboxes:/tmp/repolens-sandboxes
       - /var/run/docker.sock:/var/run/docker.sock
+    user: root
     depends_on:
       redis:
         condition: service_healthy
