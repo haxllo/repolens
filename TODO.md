@@ -25,6 +25,11 @@
 
 ## 🎯 **IMMEDIATE PRIORITIES** (Production Fixes)
 
+### 0. 🔴 Fix Rust Oxidizer Build
+**Issue:** `oxc_semantic` API mismatch in `analyzer.rs` preventing binary compilation.  
+**Fix:** Research correct accessor for `SymbolTable` in oxc 0.110.0.
+**Priority:** HIGH (Performance critical)
+
 ### 1. ✅ Missing Favicon
 **Issue:** Frontend returns 404 for favicon.ico  
 **Fix:** Added favicon.svg and updated layout.tsx
