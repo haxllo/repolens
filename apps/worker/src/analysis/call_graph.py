@@ -118,6 +118,12 @@ class CallGraphBuilder:
         unreachable = self.find_unreachable_functions()
         metrics = self.calculate_complexity_metrics()
         
+        # Extract edges for Mermaid visualization
+        edges = []
+        for caller, callees in self.graph.items():
+            for callee in callees:
+                edges.append({"from": caller, "to": callee})
+
         # Find most complex functions
         sorted_funcs = sorted(
             metrics.items(),
@@ -130,6 +136,7 @@ class CallGraphBuilder:
             'entry_points': list(self.entry_points),
             'unreachable_functions': list(unreachable),
             'complexity_metrics': metrics,
+            'edges': edges, # Now explicitly exporting edges
             'most_complex': [
                 {
                     'function': func,

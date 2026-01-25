@@ -141,26 +141,22 @@ def analyze_circular_dependencies(dependency_data: Dict) -> Dict:
     """
     try:
         # Check if it's the new format with nodes/edges
-        if isinstance(dependency_data, dict):
-            graph = dependency_data.get('graph', dependency_data)
+        graph_data = dependency_data
+        if isinstance(dependency_data, dict) and 'graph' in dependency_data:
+            graph_data = dependency_data['graph']
             
-            # If graph has nodes/edges structure, we need file-level imports
-            if isinstance(graph, dict) and 'nodes' in graph:
-                logger.info("Dependency graph format not yet supported for circular dependency detection")
-                return {
-                    'has_circular_dependencies': False,
-                    'total_cycles': 0,
-                    'cycles': [],
-                    'note': 'File-level dependency tracking not yet implemented'
-                }
+        # If it has edges, convert to the adjacency list the detector expects
+        if isinstance(graph_data, dict) and 'edges' in graph_data:
+            adj_list = defaultdict(list)
+            for edge in graph_data['edges']:
+                adj_list[edge['source']].append(edge['target'])
+            graph_data = adj_list
         
-        # It's a direct file -> [files] mapping
-        detector = CircularDependencyDetector(dependency_data)
+        # It's a direct file -> [files] mapping (or converted adjacency list)
+        detector = CircularDependencyDetector(graph_data)
         return detector.get_analysis()
     except Exception as e:
         logger.error(f"Error detecting circular dependencies: {e}")
-        import traceback
-        traceback.print_exc()
         return {
             'has_circular_dependencies': False,
             'total_cycles': 0,

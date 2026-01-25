@@ -36,12 +36,13 @@ class AIExplainer:
         """Initialize or re-initialize the Gemini model"""
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
-            system_instruction="""You are an expert software architect and technical writer. 
-            Your task is to transform raw static analysis data into a high-quality technical Wiki.
-            Focus on clarity, architectural patterns, and actionable insights.
-            Always return valid JSON following the requested schema."""
+            system_instruction="""You are a Principal Systems Architect and Technical Lead. 
+            Your goal is to produce an industrial-grade "Architectural Operating System" manual for software repositories.
+            Your writing style is authoritative, precise, and high-density—mimicking the documentation of complex systems like Kubernetes or Linux.
+            Focus on internal mechanics, data flow protocols, and structural integrity.
+            Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
         )
-            
+
     async def explain(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate structured Wiki chapters for analysis results
@@ -61,14 +62,6 @@ class AIExplainer:
                 
         except Exception as e:
             logger.error(f'Wiki generation failed: {str(e)}')
-            if self.provider == 'gemini':
-                try:
-                    logger.info("Listing available Gemini models for debugging:")
-                    for m in genai.list_models():
-                        if 'generateContent' in m.supported_generation_methods:
-                            logger.info(f"Available model: {m.name}")
-                except:
-                    pass
             return self._generate_fallback_wiki(analysis_data)
     
     async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,10 +79,12 @@ class AIExplainer:
             )
             wiki_content = json.loads(response.text)
             
-            if 'ast_files' in analysis_data:
-                enriched_chapters = await self._enrich_chapters_with_clusters(wiki_content.get('chapters', []), analysis_data)
-                if enriched_chapters:
-                    wiki_content['chapters'] = enriched_chapters
+            return {
+                **wiki_content,
+                'provider': 'gemini',
+                'model': self.model_name,
+                'confidence': 'high'
+            }
 
         except Exception as e:
             if "429" in str(e) or "quota" in str(e).lower():
@@ -102,13 +97,6 @@ class AIExplainer:
                 self._init_gemini()
                 return await self._explain_with_gemini(analysis_data)
             raise e
-        
-        return {
-            **wiki_content,
-            'provider': 'gemini',
-            'model': self.model_name,
-            'confidence': 'high'
-        }
 
     def _generate_quota_standby_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Explicitly notify user about quota exhaustion."""
@@ -129,62 +117,6 @@ class AIExplainer:
             'confidence': 'none'
         }
 
-    async def _enrich_chapters_with_clusters(self, chapters: List[Dict], data: Dict[str, Any]) -> List[Dict]:
-        """
-        Enhance generic chapters with specific details by analyzing directory clusters.
-        This mimics the 'React Wiki' depth by looking at specific folder roles.
-        """
-        files = data.get('ast_files', [])
-        if not files:
-            return chapters
-
-        # 1. Cluster files by top-level directory
-        clusters = {}
-        for f in files:
-            top_dir = f['path'].split('/')[0]
-            if top_dir not in clusters:
-                clusters[top_dir] = []
-            clusters[top_dir].append(f['path'])
-        
-        # Filter significant clusters (ignore tiny ones)
-        significant_clusters = {k: v for k, v in clusters.items() if len(v) > 2}
-        
-        # 2. Ask Gemini to analyze these specific clusters
-        cluster_prompt = f"""
-        Analyze these directory clusters and their file contents. 
-        For each directory, infer its specific architectural responsibility.
-        
-        CLUSTERS:
-        {json.dumps({k: v[:5] for k,v in significant_clusters.items()}, indent=2)}
-        
-        Task: Provide a 2-sentence technical summary for each directory.
-        Output JSON: {{ "directory_summaries": {{ "path": "summary" }} }}
-        """
-        
-        try:
-            cluster_res = self.model.generate_content(
-                cluster_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    response_mime_type="application/json",
-                )
-            )
-            insights = json.loads(cluster_res.text).get('directory_summaries', {})
-            
-            # 3. Inject these insights into the chapters
-            # We append a "Key Modules" section to the Architecture chapter
-            for chapter in chapters:
-                if "Architecture" in chapter['title'] or "Module" in chapter['title']:
-                    insight_text = "\n\n### Component Breakdown\n"
-                    for dir_name, summary in insights.items():
-                        insight_text += f"- **{dir_name}/**: {summary}\n"
-                    chapter['content'] += insight_text
-                    
-            return chapters
-            
-        except Exception as e:
-            logger.warning(f"Cluster enrichment failed: {e}")
-            return chapters
-
     async def _explain_with_openrouter(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate Wiki using OpenRouter API"""
         import aiohttp
@@ -203,7 +135,7 @@ class AIExplainer:
                     'messages': [
                         {
                             'role': 'system',
-                            'content': 'You are a technical documentation expert. Return only valid JSON.'
+                            'content': 'You are a systems architecture expert. Return only valid JSON.'
                         },
                         {
                             'role': 'user',
@@ -228,102 +160,88 @@ class AIExplainer:
                 }
             
     def _build_wiki_prompt(self, data: Dict[str, Any]) -> str:
-        """Build a sophisticated "CodeWiki" style prompt for deep repository understanding"""
+        """Build an advanced prompt for high-fidelity architectural knowledge base generation."""
         languages = data.get('languages', {})
-        risk = data.get('risk_scores', {})
-        deps = data.get('dependencies', {})
         complexity = data.get('complexity', {})
-        ast_files = data.get('ast_files', [])
         system = data.get('system', {})
+        deps = data.get('dependencies', {})
         
-        # Build a simplified file tree for context (top 2 levels + entry points)
-        file_tree = {}
-        for f in ast_files:
-            parts = f['path'].split('/')
-            curr = file_tree
-            for part in parts[:2]:  # Only first two levels to save tokens
-                if part not in curr:
-                    curr[part] = {}
-                curr = curr[part]
-
-        ast_summary = data.get('ast_summary', {})
-        patterns = ast_summary.get('patterns', {})
-
+        # Deep Diagnostics
+        circular_deps = data.get('circular_dependencies', [])
+        dead_code = data.get('dead_code', {})
+        call_graph = data.get('call_graph', {})
+        
         context = {
-            "tech_stack": {
+            "tech_protocol": {
                 "primary": languages.get('primary'),
-                "frameworks": languages.get('frameworks', []),
-                "patterns": patterns,
-                "dependencies": deps.get('statistics', {}).get('total', 0)
+                "stack": languages.get('frameworks', []),
+                "patterns_detected": data.get('ast_summary', {}).get('patterns', {}),
+                "dependency_stats": deps.get('statistics', {})
             },
-            "system": {
-                "build_scripts": list(system.get('scripts', {}).keys())[:15],
-                "script_contents_snippet": {k: v[:500] for k, v in system.get('script_contents', {}).items()}, # Send snippets of scripts
-                "ci_workflows": [w['name'] for w in system.get('ci_workflows', [])],
-                "infrastructure": system.get('infrastructure', []),
-                "governance": system.get('governance', [])
+            "structural_integrity": {
+                "risk": data.get('risk_scores', {}).get('overall'),
+                "circular_loops": circular_deps[:10],
+                "dead_code_ratio": dead_code.get('statistics', {}).get('unusedRatio'),
+                "complexity_metrics": complexity.get('statistics', {}),
+                "hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:8]]
             },
-            "structure": {
-                "file_tree_snippet": file_tree,
+            "logic_flow": {
                 "entry_points": data.get('entry_points', []),
-                "total_files": len(ast_files)
+                "call_edges_snippet": list(call_graph.get('edges', []))[:20],
+                "most_complex_functions": call_graph.get('most_complex', [])[:5]
             },
-            "health": {
-                "risk": risk.get('overall'),
-                "complexity_hotspots": [f["path"] for f in complexity.get('fileSummaries', [])[:5]]
+            "operational_os": {
+                "build_logic": system.get('scripts', {}),
+                "script_samples": {k: v[:600] for k, v in system.get('script_contents', {}).items()},
+                "ci_pipelines": system.get('ci_workflows', []),
+                "infrastructure": system.get('infrastructure', [])
             }
         }
 
-        prompt = f"""As a Principal Software Architect, generate a "Master Knowledge Base" for this repository. 
-The goal is to provide a "Deep Insight Report" that surpasses standard documentation. Think like the creator of the code.
+        prompt = f"""ACT AS A PRINCIPAL ARCHITECT. Generate a "Master Architectural Archive" for this repository.
+The documentation must be broken into functional domains with deep technical density.
 
 CONTEXT:
 {json.dumps(context, indent=2)}
 
 OUTPUT SCHEMA:
 {{
-  "summary": "Professional architectural purpose. Identify the core 'Mental Model' of the system.",
+  "summary": "authoritative purpose of the system and its primary mental model",
   "onboarding_flow": {{
-    "welcome_message": "Friendly greeting summarizing the technical ambition.",
-    "guided_paths": [
-      {{ "title": "e.g., Request Lifecycle", "description": "How data flows from A to B", "chapter_index": 0 }}
-    ],
-    "first_steps": [
-      {{ "file": "path/to/file", "reason": "Strategic importance" }}
-    ]
+    "welcome_message": "Strategic summary of technical ambition.",
+    "guided_paths": [{{ "title": "Protocol: Name", "description": "precise logic path", "chapter_index": 0 }}],
+    "first_steps": [{{ "file": "path", "reason": "architectural importance" }}]
   }},
   "chapters": [
     {{
-      "title": "Architectural Foundation & Ecosystem",
-      "content": "Analyze the choice of libraries ({', '.join(patterns.get('state_management', []))}, {', '.join(patterns.get('ui_libraries', []))}). Explain how they form the backbone of the project."
+      "title": "SYSTEM_OVERVIEW // FUNCTIONAL_DOMAINS",
+      "content": "Identify the key functional areas. USE A MARKDOWN TABLE here mapping 'Domain' to 'Responsibility' and 'Core Path'. Reference the detected tech stack."
     }},
     {{
-      "title": "Module Strategy & Separation of Concerns",
-      "content": "Explain the relationship between major directories. How does the logic in folder A support folder B? (e.g. 'The Registry uses the CLI for automation')."
+      "title": "LOGIC_PROPAGATION // CALL_GRAPH_ANALYSIS",
+      "content": "Analyze how information travels. USE A MERMAID GRAPH (graph TD) based on 'call_edges_snippet'. Explain the role of the most complex functions."
     }},
     {{
-      "title": "Development Lifecycle & Operations",
-      "content": "Deep dive into scripts and CI. Based on the 'script_contents_snippet' provided, explain EXACTLY what the build/setup scripts are doing. Mention specific tools used (e.g. 'Uses svgo for SVG optimization in build-icons.ts')."
+      "title": "STRUCTURAL_DEBT // RISK_DIAGNOSTICS",
+      "content": "Deep dive into circular dependencies and hotspots. IF CIRCULAR DEPS EXIST, USE A MERMAID GRAPH to show the loop. Use a table to list hotspots with their complexity scores."
     }},
     {{
-      "title": "Data Flow & State Propagation",
-      "content": "If patterns like Redux or Context are used, explain how global state is managed across the tree."
+      "title": "OPERATIONAL_INFRASTRUCTURE // CI_CD_PROTOCOL",
+      "content": "Analyze the build systems and scripts. Explain the 'Operational OS' of the repo. Detail exactly what the scripts in 'script_samples' are accomplishing."
     }},
     {{
-      "title": "Technical Evolution & Optimization",
-      "content": "Identify the 'North Star' for refactoring. Where is the project growing, and what are the structural bottlenecks?"
+      "title": "TECHNICAL_NORTH_STAR // OPTIMIZATION_STRATEGY",
+      "content": "Provide a roadmap for refactoring. Target the dead code and complexity bottlenecks identified. Propose a pharsed architectural evolution."
     }}
   ],
-  "module_map": [
-     {{ "path": "string", "role": "Specific functional responsibility" }}
-  ]
+  "module_map": [{{ "path": "string", "role": "Specific functional responsibility" }}]
 }}
 
 INSTRUCTIONS:
-- Tone: Analytical, authoritative, and visionary.
-- Depth: Do not just list files. Explain 'The Why' and 'The How'. 
-- Connect the dots: Explain how the Build Scripts relate to the Deployment Infrastructure.
-- Mention specific detected patterns: {json.dumps(patterns)}
+1. TONE: Authoritative, visionary, technical. No emojis.
+2. VISUALS: Use ```mermaid code blocks for graphs.
+3. DATA: Use Markdown tables for any lists of metadata or metrics.
+4. DEPTH: Explain 'The Why' behind the folder structure and library choices.
 """
         return prompt
         
