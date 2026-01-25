@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner'
 import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
 import { apiClient } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
 
 interface ScanData {
   id: string

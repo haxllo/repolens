@@ -75,7 +75,7 @@ The project adheres to a strict visual and technical protocol:
 
 ## DEVELOPMENT_CONVENTIONS
 
-- **Monorepo Management**: Powered by **Turborepo**. Use `--filter` to target specific apps (e.g., `npm run dev --filter=@repolens/web`).
+- **Monorepo Management**: Powered by **Turborepo**. Use `--filter` to target specific apps (e.g., `pnpm dev --filter=@repolens/web`).
 - **Data Access**: Use the **Prisma Client** directly for database operations.
 - **AI Integration**: AI-related logic resides in `apps/worker/src/ai/explainer.py`.
 - **Roadmap Alignment**: Always consult `BLUEPRINT_PLAN.md` before initiating major refactors.
@@ -87,7 +87,7 @@ The project adheres to a strict visual and technical protocol:
 When acting as an agent within this repository:
 1. **Maintain the Tone**: Be analytical, authoritative, and visionary. Avoid conversational filler.
 2. **Respect the Aesthetic**: Ensure any new UI components follow the 0px radius, monotone, sharp-edged protocol.
-3. **Verify Robustness**: Always run `npm run build` after UI changes.
+3. **Verify Robustness**: Always run `pnpm build` after UI changes.
 4. **Purge Informalism**: Never introduce emojis or "startup-style" indigo/purple gradients.
 
 (C) 2026 REPOLENS // ARCHITECTURAL_ARCHIVE_VAULT
