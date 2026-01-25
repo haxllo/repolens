@@ -24,24 +24,23 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
     let mut exports = Vec::new();
 
     // 1. Semantic Analysis (SCIP Lite)
+    // According to docs, SemanticBuilder::new() is correct for 0.110.0
     let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
-    
-    // In oxc 0.110.0, access symbols through the scoping() method
     let scoping = semantic.scoping();
-    let symbols_table = &scoping.symbols;
     
     let mut symbols = Vec::new();
-    for symbol_id in symbols_table.symbol_ids() {
-        let name = symbols_table.get_name(symbol_id).to_string();
-        let flags = symbols_table.get_flags(symbol_id);
+    for symbol_id in scoping.symbol_ids() {
+        let name = scoping.symbol_name(symbol_id).to_string();
+        let flags = scoping.symbol_flags(symbol_id);
         
         let kind = if flags.is_function() { "function" }
                   else if flags.is_class() { "class" }
                   else if flags.is_variable() { "variable" }
                   else { "other" };
 
-        let references = semantic.symbol_references(symbol_id).count();
+        // Cross-check: get_resolved_references returns an Iterator, so we use count()
+        let references = scoping.get_resolved_references(symbol_id).count();
         
         if kind != "other" {
             symbols.push(Symbol { name, kind: kind.to_string(), references });
@@ -49,6 +48,7 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
     }
 
     // 2. AST Traversal for Metadata
+    // In oxc 0.110.0, Statement variants include Import/Export declarations directly
     for item in &program.body {
         match item {
             Statement::ImportDeclaration(import_decl) => {
