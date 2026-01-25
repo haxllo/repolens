@@ -98,7 +98,7 @@ export default function HistoryPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-black border border-white/10 rounded-none px-4 py-2 text-[10px] font-black uppercase tracking-widest focus:border-lime-400 outline-none transition-colors"
+            className="bg-black border border-white/10 rounded-none px-4 py-2 text-[10px] font-black uppercase tracking-widest focus:border-white/30 outline-none transition-colors appearance-none cursor-pointer"
           >
             <option value="all">All Status</option>
             <option value="COMPLETED">Completed</option>

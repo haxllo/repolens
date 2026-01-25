@@ -82,7 +82,6 @@ export default function ScanForm({ userId }: { userId?: string }) {
             onChange={(e) => setRepoUrl(e.target.value)}
             required
             disabled={loading}
-            className="bg-black border-white/10 rounded-none h-14 text-xs font-mono placeholder:text-white/10 focus:border-lime-400/50 transition-colors"
           />
         </div>
 
@@ -95,14 +94,14 @@ export default function ScanForm({ userId }: { userId?: string }) {
             value={branch}
             onChange={(e) => setBranch(e.target.value)}
             disabled={loading}
-            className="bg-black border-white/10 rounded-none h-14 text-xs font-mono placeholder:text-white/10 focus:border-lime-400/50 transition-colors"
           />
         </div>
 
-        <button 
+        <Button 
           type="submit" 
           disabled={loading}
-          className="w-full h-16 bg-white hover:bg-lime-400 text-black text-[11px] font-black uppercase tracking-[0.4em] transition-all disabled:opacity-30 active:scale-[0.98]"
+          size="lg"
+          className="w-full"
         >
           {loading ? (
             <div className="flex items-center justify-center gap-3">
@@ -112,7 +111,7 @@ export default function ScanForm({ userId }: { userId?: string }) {
           ) : (
             'Run Diagnostic'
           )}
-        </button>
+        </Button>
       </form>
     </div>
   )

@@ -99,7 +99,6 @@ export function AuthCard() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={isSignUp}
-                className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
               />
             </div>
             <div className="space-y-2">
@@ -110,7 +109,6 @@ export function AuthCard() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required={isSignUp}
-                className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
               />
             </div>
           </div>
@@ -125,7 +123,6 @@ export function AuthCard() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="bg-black border-white/10 rounded-none h-12 text-xs placeholder:text-white/10"
           />
         </div>
 
@@ -140,7 +137,7 @@ export function AuthCard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-black border-white/10 rounded-none h-12 text-xs pr-10"
+              className="pr-10"
             />
             <button
               type="button"
