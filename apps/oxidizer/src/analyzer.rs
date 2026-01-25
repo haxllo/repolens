@@ -27,12 +27,13 @@ pub fn analyze_program(program: &oxc_ast::ast::Program, _source_text: &str) -> A
     let semantic_ret = SemanticBuilder::new().build(program);
     let semantic = semantic_ret.semantic;
     
-    let mut symbols = Vec::new();
+    // In oxc 0.110.0, symbols are stored in the scoping field
+    let symbols_table = &semantic.scoping.symbols;
     
-    // Attempting scopeless_symbols() which is a known pattern in some OXC versions
-    for symbol_id in semantic.scopeless_symbols().symbol_ids() {
-        let name = semantic.scopeless_symbols().get_name(symbol_id).to_string();
-        let flags = semantic.scopeless_symbols().get_flags(symbol_id);
+    let mut symbols = Vec::new();
+    for symbol_id in symbols_table.symbol_ids() {
+        let name = symbols_table.get_name(symbol_id).to_string();
+        let flags = symbols_table.get_flags(symbol_id);
         
         let kind = if flags.is_function() { "function" }
                   else if flags.is_class() { "class" }
