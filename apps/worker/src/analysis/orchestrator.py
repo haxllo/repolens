@@ -134,14 +134,14 @@ class AnalysisOrchestrator:
             if self.storage.enabled:
                 logger.info('Step 12: Persisting results to R2 Storage')
                 storage_key = f"scans/{scan_id or 'manual'}/results.json"
-                storage_data = {
-                    'languages': languages,
-                    'ast': ast_data,
-                    'dependencies': dependencies,
-                    'riskScores': risk_scores,
-                    'explanations': explanations
-                }
-                success = await self.storage.upload_json(storage_key, json.dumps(storage_data))
+                            storage_data = {
+                                'languages': languages,
+                                'ast': ast_data,
+                                'dependencies': dependencies,
+                                'riskScores': risk_scores,
+                                'complexity': complexity_metrics,
+                                'explanations': explanations
+                            }                success = await self.storage.upload_json(storage_key, json.dumps(storage_data))
                 if success:
                     artifact_url = self.storage.get_public_url(storage_key)
 

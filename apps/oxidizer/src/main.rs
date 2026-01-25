@@ -1,3 +1,5 @@
+mod analyzer;
+
 use std::path::{Path, PathBuf};
 use std::fs;
 use oxc_allocator::Allocator;
@@ -7,6 +9,7 @@ use rayon::prelude::*;
 use serde::Serialize;
 use walkdir::WalkDir;
 use clap::Parser as ClapParser;
+use analyzer::analyze_program;
 
 #[derive(ClapParser, Debug)]
 #[command(author, version, about = "High-performance architectural scanner for RepoLens")]
@@ -20,6 +23,8 @@ struct FileResult {
     path: String,
     functions: usize,
     classes: usize,
+    imports: Vec<String>,
+    exports: Vec<String>,
     lines: usize,
     error: Option<String>,
 }
@@ -94,24 +99,14 @@ fn process_file(root: &Path, path: &Path) -> FileResult {
         };
     }
 
-    let program = ret.program;
-    let mut functions = 0;
-    let mut classes = 0;
-
-    // Fast AST traversal using OXC's visitor-less approach for counts
-    for body_item in &program.body {
-        use oxc_ast::ast::Statement;
-        match body_item {
-            Statement::FunctionDeclaration(_) => functions += 1,
-            Statement::ClassDeclaration(_) => classes += 1,
-            _ => {}
-        }
-    }
+    let analysis = analyze_program(&ret.program);
 
     FileResult {
         path: rel_path,
-        functions,
-        classes,
+        functions: analysis.functions,
+        classes: analysis.classes,
+        imports: analysis.imports,
+        exports: analysis.exports,
         lines,
         error: None,
     }

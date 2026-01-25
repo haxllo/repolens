@@ -2,7 +2,7 @@
 
 ---
 
-### CURRENT_BUILD: v2.0.0-PROD
+### CURRENT_BUILD: v2.1.0-PROD (2026-01-25)
 **Aesthetic Standard**: Robust Monotone Premium.
 **Operational Base**: AWS EC2 (Backend) + Vercel (Frontend).
 
@@ -16,6 +16,7 @@
 - [x] **SANDBOX_ENGINE**: VERIFIED (Native Docker Execution)
 - [x] **BLUEPRINT_UI**: VERIFIED (ReactFlow 2D Spatial)
 - [x] **ARCHIVE_LOGS**: VERIFIED (Technical Table View)
+- [x] **FAVICON**: VERIFIED (SVG + ICO Fallback)
 
 ---
 

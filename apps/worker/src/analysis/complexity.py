@@ -306,6 +306,12 @@ def analyze_complexity(files: List[Dict[str, Any]], repo_path: str) -> Dict:
     else:
         avg_cyclomatic = avg_cognitive = max_cyclomatic = max_cognitive = 0
     
+    # Create a map for frontend hotspots
+    file_risks_map = {
+        s['path']: min(100, s['maxCyclomatic'] * 5) # Scale to 0-100
+        for s in file_summaries
+    }
+    
     return {
         'statistics': {
             'totalFunctions': total_functions,
@@ -317,6 +323,7 @@ def analyze_complexity(files: List[Dict[str, Any]], repo_path: str) -> Dict:
         },
         'highComplexityFunctions': high_complexity[:20],  # Top 20
         'fileSummaries': sorted(file_summaries, key=lambda x: -x['maxCyclomatic'])[:20],
+        'fileRisks': file_risks_map,
         'riskScore': _calculate_complexity_risk(avg_cyclomatic, avg_cognitive, len(high_complexity), total_functions),
     }
 

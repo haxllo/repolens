@@ -58,30 +58,39 @@ class SystemAnalyzer:
     async def _extract_script_logic(self, repo_path: str, scripts: Dict[str, str]) -> Dict[str, str]:
         """Reads the first 100 lines of identified script files to understand their logic."""
         contents = {}
-        high_value_dirs = ['scripts', 'tools', 'ci', 'devops', '.github/scripts']
-        extensions = ('.js', '.ts', '.py', '.sh', '.bash', '.pl')
+        high_value_dirs = ['.', 'scripts', 'tools', 'ci', 'devops', '.github/scripts', 'bin']
+        extensions = ('.js', '.ts', '.py', '.sh', '.bash', '.pl', '.ps1')
 
         # 1. Search for script files in common directories
         for s_dir in high_value_dirs:
             full_dir = os.path.join(repo_path, s_dir)
             if os.path.exists(full_dir) and os.path.isdir(full_dir):
-                for f in os.listdir(full_dir):
-                    if f.endswith(extensions):
-                        f_path = os.path.join(full_dir, f)
-                        rel_path = os.path.relpath(f_path, repo_path)
-                        contents[rel_path] = self._read_file_safe(f_path)
+                try:
+                    for f in os.listdir(full_dir):
+                        if f.endswith(extensions) and f not in ['package.json', 'package-lock.json']:
+                            f_path = os.path.join(full_dir, f)
+                            if os.path.isfile(f_path):
+                                rel_path = os.path.relpath(f_path, repo_path)
+                                # Avoid adding too many files if in root
+                                if s_dir == '.' and f.startswith('.'): continue
+                                contents[rel_path] = self._read_file_safe(f_path)
+                except Exception:
+                    pass
 
-        # 2. If node scripts point to specific files, try to read them
+        # 2. If scripts point to specific files, try to read them
         for name, cmd in scripts.items():
-            if any(marker in cmd for marker in ['node ', 'ts-node ', 'python ', 'bash ', 'sh ']):
+            if not isinstance(cmd, str): continue
+            if any(marker in cmd for marker in ['node ', 'ts-node ', 'python ', 'bash ', 'sh ', './']):
                 # Basic extraction of path-like strings in the command
                 parts = cmd.split()
                 for p in parts:
-                    if p.endswith(extensions) and ('/' in p or '\\' in p):
-                        f_path = os.path.join(repo_path, p)
-                        if os.path.exists(f_path):
+                    if p.endswith(extensions) and (p.startswith('./') or '/' in p or '\\' in p):
+                        clean_p = p.lstrip('./')
+                        f_path = os.path.join(repo_path, clean_p)
+                        if os.path.exists(f_path) and os.path.isfile(f_path):
                             rel_path = os.path.relpath(f_path, repo_path)
-                            contents[rel_path] = self._read_file_safe(f_path)
+                            if rel_path not in contents:
+                                contents[rel_path] = self._read_file_safe(f_path)
 
         return contents
 
@@ -118,13 +127,50 @@ class SystemAnalyzer:
                         pass
         return workflows
 
-    async def _analyze_infrastructure(self, repo_path: str) -> List[str]:
-        """Identifies infrastructure tools."""
+    async def _analyze_infrastructure(self, repo_path: str) -> List[Dict[str, Any]]:
+        """Identifies and extracts infrastructure details."""
         infra = []
-        if os.path.exists(os.path.join(repo_path, 'Dockerfile')): infra.append('Docker')
-        if os.path.exists(os.path.join(repo_path, 'docker-compose.yml')): infra.append('Docker Compose')
-        if os.path.exists(os.path.join(repo_path, 'terraform')): infra.append('Terraform')
-        if os.path.exists(os.path.join(repo_path, 'vercel.json')): infra.append('Vercel')
+        
+        # Dockerfile
+        dockerfile_path = os.path.join(repo_path, 'Dockerfile')
+        if os.path.exists(dockerfile_path):
+            details = {'tool': 'Docker', 'file': 'Dockerfile'}
+            try:
+                with open(dockerfile_path, 'r') as f:
+                    for line in f:
+                        if line.startswith('FROM'):
+                            details['base_image'] = line.split('FROM')[1].strip()
+                        if line.startswith('EXPOSE'):
+                            details['port'] = line.split('EXPOSE')[1].strip()
+            except Exception:
+                pass
+            infra.append(details)
+            
+        # Docker Compose
+        compose_path = os.path.join(repo_path, 'docker-compose.yml')
+        if not os.path.exists(compose_path):
+            compose_path = os.path.join(repo_path, 'docker-compose.yaml')
+            
+        if os.path.exists(compose_path):
+            details = {'tool': 'Docker Compose', 'file': os.path.basename(compose_path)}
+            try:
+                with open(compose_path, 'r') as f:
+                    data = yaml.safe_load(f)
+                    if data and 'services' in data:
+                        details['services'] = list(data['services'].keys())
+                        ports = []
+                        for s_name, s_cfg in data['services'].items():
+                            if 'ports' in s_cfg:
+                                ports.extend(s_cfg['ports'])
+                        if ports:
+                            details['ports'] = ports
+            except Exception:
+                pass
+            infra.append(details)
+            
+        if os.path.exists(os.path.join(repo_path, 'terraform')): infra.append({'tool': 'Terraform'})
+        if os.path.exists(os.path.join(repo_path, 'vercel.json')): infra.append({'tool': 'Vercel'})
+        
         return infra
 
     async def _analyze_governance(self, repo_path: str) -> List[str]:
