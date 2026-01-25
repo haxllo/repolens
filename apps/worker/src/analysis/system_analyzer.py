@@ -2,29 +2,33 @@ import os
 import json
 import logging
 import yaml
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
 class SystemAnalyzer:
     """
     Analyzes the 'Operational OS' of the repository.
-    Extracts build systems, CI/CD pipelines, and infrastructure configuration.
+    Extracts build systems, CI/CD pipelines, infrastructure configuration,
+    and the actual logic inside operational scripts.
     """
     
     async def analyze(self, repo_path: str) -> Dict[str, Any]:
-        """Run a full system analysis."""
-        logger.info('Analyzing system configuration and workflows')
+        """Run a full system analysis with content extraction."""
+        logger.info('Analyzing system configuration and script logic')
+        
+        scripts_metadata = await self._analyze_scripts(repo_path)
         
         return {
-            'scripts': await self._analyze_scripts(repo_path),
+            'scripts': scripts_metadata,
+            'script_contents': await self._extract_script_logic(repo_path, scripts_metadata),
             'ci_workflows': await self._analyze_github_workflows(repo_path),
             'infrastructure': await self._analyze_infrastructure(repo_path),
             'governance': await self._analyze_governance(repo_path)
         }
 
     async def _analyze_scripts(self, repo_path: str) -> Dict[str, str]:
-        """Extracts build, test, and operational scripts."""
+        """Extracts build, test, and operational script definitions."""
         scripts = {}
         
         # Node.js
@@ -43,13 +47,55 @@ class SystemAnalyzer:
             try:
                 with open(makefile, 'r') as f:
                     for line in f:
-                        if ':' in line and not line.startswith('.') and not line.startswith('	'):
+                        if ':' in line and not line.startswith('.') and not line.startswith('    '):
                             target = line.split(':')[0].strip()
                             scripts[f"make {target}"] = "Makefile target"
             except Exception:
                 pass
                 
         return scripts
+
+    async def _extract_script_logic(self, repo_path: str, scripts: Dict[str, str]) -> Dict[str, str]:
+        """Reads the first 100 lines of identified script files to understand their logic."""
+        contents = {}
+        high_value_dirs = ['scripts', 'tools', 'ci', 'devops', '.github/scripts']
+        extensions = ('.js', '.ts', '.py', '.sh', '.bash', '.pl')
+
+        # 1. Search for script files in common directories
+        for s_dir in high_value_dirs:
+            full_dir = os.path.join(repo_path, s_dir)
+            if os.path.exists(full_dir) and os.path.isdir(full_dir):
+                for f in os.listdir(full_dir):
+                    if f.endswith(extensions):
+                        f_path = os.path.join(full_dir, f)
+                        rel_path = os.path.relpath(f_path, repo_path)
+                        contents[rel_path] = self._read_file_safe(f_path)
+
+        # 2. If node scripts point to specific files, try to read them
+        for name, cmd in scripts.items():
+            if any(marker in cmd for marker in ['node ', 'ts-node ', 'python ', 'bash ', 'sh ']):
+                # Basic extraction of path-like strings in the command
+                parts = cmd.split()
+                for p in parts:
+                    if p.endswith(extensions) and ('/' in p or '\\' in p):
+                        f_path = os.path.join(repo_path, p)
+                        if os.path.exists(f_path):
+                            rel_path = os.path.relpath(f_path, repo_path)
+                            contents[rel_path] = self._read_file_safe(f_path)
+
+        return contents
+
+    def _read_file_safe(self, path: str, line_limit: int = 100) -> str:
+        """Reads a file with a line limit and safety checks."""
+        try:
+            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = []
+                for i, line in enumerate(f):
+                    if i >= line_limit: break
+                    lines.append(line)
+                return "".join(lines)
+        except Exception:
+            return "[Error reading script content]"
 
     async def _analyze_github_workflows(self, repo_path: str) -> List[Dict[str, Any]]:
         """Parses GitHub Actions to understand CI/CD."""
@@ -77,7 +123,6 @@ class SystemAnalyzer:
         infra = []
         if os.path.exists(os.path.join(repo_path, 'Dockerfile')): infra.append('Docker')
         if os.path.exists(os.path.join(repo_path, 'docker-compose.yml')): infra.append('Docker Compose')
-        if os.path.exists(os.path.join(repo_path, 'k8s')): infra.append('Kubernetes')
         if os.path.exists(os.path.join(repo_path, 'terraform')): infra.append('Terraform')
         if os.path.exists(os.path.join(repo_path, 'vercel.json')): infra.append('Vercel')
         return infra

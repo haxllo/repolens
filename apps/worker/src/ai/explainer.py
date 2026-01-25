@@ -253,11 +253,12 @@ class AIExplainer:
             "tech_stack": {
                 "primary": languages.get('primary'),
                 "frameworks": languages.get('frameworks', []),
-                "patterns": patterns, # NEW: Detected libs like Zustand, Radix, etc.
+                "patterns": patterns,
                 "dependencies": deps.get('statistics', {}).get('total', 0)
             },
             "system": {
                 "build_scripts": list(system.get('scripts', {}).keys())[:15],
+                "script_contents_snippet": {k: v[:500] for k, v in system.get('script_contents', {}).items()}, # Send snippets of scripts
                 "ci_workflows": [w['name'] for w in system.get('ci_workflows', [])],
                 "infrastructure": system.get('infrastructure', []),
                 "governance": system.get('governance', [])
@@ -302,7 +303,7 @@ OUTPUT SCHEMA:
     }},
     {{
       "title": "Development Lifecycle & Operations",
-      "content": "Deep dive into scripts and CI. Explain NOT JUST what they are, but HOW they automate the developer experience."
+      "content": "Deep dive into scripts and CI. Based on the 'script_contents_snippet' provided, explain EXACTLY what the build/setup scripts are doing. Mention specific tools used (e.g. 'Uses svgo for SVG optimization in build-icons.ts')."
     }},
     {{
       "title": "Data Flow & State Propagation",
@@ -320,7 +321,7 @@ OUTPUT SCHEMA:
 
 INSTRUCTIONS:
 - Tone: Analytical, authoritative, and visionary.
-- Depth: Do not just list files. Explain 'The Why'. 
+- Depth: Do not just list files. Explain 'The Why' and 'The How'. 
 - Connect the dots: Explain how the Build Scripts relate to the Deployment Infrastructure.
 - Mention specific detected patterns: {json.dumps(patterns)}
 """
