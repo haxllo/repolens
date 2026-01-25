@@ -230,21 +230,21 @@ const CodeBlock = ({ className, children, ...props }: any) => {
   };
 
   return (
-    <div className="my-12 border border-white/10 bg-[#050505] rounded-none overflow-hidden group">
-      <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border-b border-white/5">
-        <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">{language || 'code'}</span>
+    <div className="my-6 border border-white/10 bg-[#050505] rounded-none overflow-hidden group">
+      <div className="flex items-center justify-between px-4 py-1.5 bg-white/[0.02] border-b border-white/5">
+        <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest">{language || 'code'}</span>
         {isRunnable && (
           <button 
             onClick={runCode}
             disabled={isRunning}
-            className="text-[10px] font-bold uppercase tracking-wider text-lime-400 hover:text-lime-300 transition-colors disabled:opacity-30"
+            className="text-[9px] font-black uppercase tracking-wider text-lime-400 hover:text-lime-300 transition-colors disabled:opacity-30"
           >
-            {isRunning ? 'Executing...' : 'Run Snippet'}
+            {isRunning ? '...' : 'RUN'}
           </button>
         )}
       </div>
-      <div className="p-6 overflow-x-auto">
-        <code className="text-sm font-mono text-white/70 leading-relaxed">{children}</code>
+      <div className="p-4 overflow-x-auto">
+        <code className="text-[11px] font-mono text-white/60 leading-relaxed">{children}</code>
       </div>
       <AnimatePresence>
         {output && (
@@ -301,50 +301,50 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
   if (chapters.length === 0) return null;
 
   return (
-    <div className="max-w-4xl mx-auto py-20 min-h-screen">
-      {/* Chapter Navigator (Floating Minimal) */}
-      <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 bg-black border border-white/10 rounded-none flex items-center gap-8 shadow-2xl">
+    <div className="max-w-4xl mx-auto py-12 min-h-screen">
+      {/* Chapter Navigator (Docked to Bottom) */}
+      <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] px-6 py-3 bg-black border border-white/10 rounded-none flex items-center gap-8 shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-3 pr-8 border-r border-white/10">
           <FileText className="w-4 h-4 text-lime-400" />
-          <span className="text-[11px] font-bold text-white tracking-widest uppercase truncate max-w-[150px]">
-            {repoUrl.split('/').pop()}
+          <span className="text-[10px] font-black text-white tracking-widest uppercase truncate max-w-[120px]">
+            Archive_Index
           </span>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           {chapters.map((chapter, i) => (
             <button 
               key={chapter.title}
               onClick={() => setActiveView(i)}
               className={cn(
-                "text-[10px] font-bold uppercase tracking-widest transition-colors",
-                activeChapter === i ? "text-lime-400" : "text-white/20 hover:text-white/50"
+                "text-[10px] font-bold uppercase tracking-widest transition-all w-8 h-8 border flex items-center justify-center",
+                activeChapter === i ? "bg-white text-black border-white" : "text-white/20 border-white/5 hover:border-white/20 hover:text-white"
               )}
             >
-              0{i + 1}
+              {i + 1}
             </button>
           ))}
         </div>
       </nav>
 
-      <main className="mt-20">
+      <main className="mt-8 pb-32">
         <AnimatePresence mode="wait">
           <motion.article
             key={activeChapter}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4 }}
           >
             {/* Header */}
-            <header className="mb-20">
-              <div className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] mb-6">
-                Chapter 0{activeChapter + 1} / {chapters.length}
+            <header className="mb-12">
+              <div className="text-[9px] font-mono text-white/20 uppercase tracking-[0.4em] mb-4">
+                PROTOCOL_CHAPTER_0{activeChapter + 1}
               </div>
-              <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-12 leading-[0.85] uppercase">
+              <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-8 leading-[0.9] uppercase">
                 {chapters[activeChapter].title}
               </h1>
               {activeChapter === 0 && data.summary && (
-                <p className="text-2xl text-white/40 leading-relaxed font-medium max-w-2xl border-l border-white/10 pl-8 italic">
+                <p className="text-xl text-white/40 leading-relaxed font-medium max-w-2xl border-l border-lime-400/30 pl-8">
                   {data.summary}
                 </p>
               )}
@@ -354,7 +354,11 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
             <SystemSpecHeader system={data.system} />
 
             {/* Content */}
-            <div className="prose prose-invert prose-lime max-w-none">
+            <div className="prose prose-invert prose-lime max-w-none 
+              prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-2xl prose-h2:font-black prose-h2:tracking-[0.2em]
+              prose-p:text-base prose-p:leading-relaxed prose-p:text-white/50
+              prose-table:border prose-table:border-white/5 prose-th:text-[10px] prose-th:uppercase prose-th:tracking-widest prose-th:text-white/20
+              prose-td:text-[11px] prose-td:font-mono prose-td:text-white/40 prose-td:py-3">
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={components as any}
@@ -362,25 +366,6 @@ export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
                 {chapters[activeChapter].content}
               </ReactMarkdown>
             </div>
-
-            {/* Footer Pagination */}
-            <footer className="mt-32 pt-12 border-t border-white/5 flex justify-between items-center">
-              <div className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/10">
-                Architectural Knowledge Core
-              </div>
-              <div className="flex gap-12">
-                {activeChapter > 0 && (
-                  <button onClick={() => setActiveView(activeChapter - 1)} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
-                    Previous
-                  </button>
-                )}
-                {activeChapter < chapters.length - 1 && (
-                  <button onClick={() => setActiveView(activeChapter + 1)} className="text-[10px] font-black uppercase tracking-widest text-lime-400 hover:text-lime-300 transition-colors">
-                    Next Chapter
-                  </button>
-                )}
-              </div>
-            </footer>
           </motion.article>
         </AnimatePresence>
       </main>
