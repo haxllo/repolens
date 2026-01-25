@@ -15,14 +15,18 @@
 - [x] **Vaulting Protocol**: Manual bookmarking of verified architectures.
 
 ### MILESTONE_03: PROCESS_DEPTH (IN_PROGRESS)
-- [ ] **Script Content Extraction**: Enhance the worker to read the first 100 lines of identified build/infra scripts.
-- [ ] **Functional Logic Mapping**: AI explains *how* scripts work by analyzing the code inside them.
-- [ ] **Multi-Pass Inference**: Implement a second AI pass to link CLI tools to core registry logic.
+- [ ] **Script Content Extraction**: Enhance worker to read build/infra script logic.
+- [ ] **Functional Logic Mapping**: AI explains *how* scripts work by analyzing code.
 
-### MILESTONE_04: REPOSITORY_SYNC (PLANNED)
-- [ ] **Incremental Indexing**: Detect changes in GitHub repos and update the archive automatically.
-- [ ] **Diff Reports**: Show how architecture has drifted between two scan versions.
-- [ ] **Webhooks**: Automatic re-analysis triggered by Git Push events.
+### MILESTONE_04: SPATIAL_MAP_V2 (IN_PROGRESS)
+- [x] **ReactFlow 2D Engine**: High-performance spatial navigation installed.
+- [ ] **Semantic Hotspots**: Mapping risk scores directly to the 2D nodes.
+
+### MILESTONE_05: OXIDIZED_CORE (NEW - HIGH PRIORITY)
+- [ ] **Rust Migration**: Rebuilding the Python worker in Rust for 100x speed.
+- [ ] **OXC Integration**: Replacing Tree-sitter with the ultra-fast OXC parser.
+- [ ] **SCIP Protocol**: Implementing symbolic indexing for exact code navigation.
+- [ ] **Multi-Threaded Indexing**: Support for repositories with 1M+ lines of code.
 
 ---
 
@@ -31,4 +35,4 @@ Transition to a **Self-Healing Repository**. RepoLens should not only explain th
 
 ---
 
-*Updated: Jan 25, 2026 // Archive_Protocol_V2*
+*Updated: Jan 25, 2026 // Archive_Protocol_V3_Oxidized*

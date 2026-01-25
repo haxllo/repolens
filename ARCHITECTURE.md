@@ -1,44 +1,45 @@
 # SYSTEM_ARCHITECTURE_SPECIFICATION
 
-RepoLens follows a distributed analysis pattern optimized for deep repository indexing and secure code execution.
+RepoLens is transitioning to a high-performance, semantic-aware architecture optimized for massive repositories and industrial-grade diagnostics.
 
 ---
 
 ### CORE_SERVICES
 
 #### 1. API_GATEWAY (NESTJS)
-- Protocol: REST / JSON.
-- Responsibility: User authentication, scan job orchestration, and results distribution.
-- Auth: Better Auth (Frontend) + JWT (Backend).
+- **Protocol**: REST / JSON.
+- **Responsibility**: User authentication, scan orchestration, and result delivery.
+- **Queue Management**: Dispatches jobs to the Analysis Core via BullMQ / Redis.
 
-#### 2. ANALYSIS_CORE (PYTHON)
-- Language: Python 3.11+.
-- Primary Engine: Tree-sitter for AST parsing.
-- Intelligence: Gemini 2.0 via Google Generative AI SDK.
-- Sandbox: Native Docker Engine (Mounted /var/run/docker.sock).
+#### 2. OXIDIZED_ANALYSIS_ENGINE (RUST)
+- **Language**: Rust 1.75+.
+- **Parsing Core**: OXC (Oxidation Compiler) for JS/TS; Tree-sitter for secondary languages.
+- **Semantic Layer**: SCIP (Symbolic Code Index Protocol) for definition-reference mapping.
+- **Intelligence**: Integrated with Gemini 2.0 via async Rust handlers.
+- **Sandbox**: Native Docker Engine integration for code execution.
 
 #### 3. KNOWLEDGE_INDEX (DATABASE)
-- Metadata: PostgreSQL (Neon).
-- Queue: Redis (Upstash).
-- Semantic: Vectorize (Cloudflare).
+- **Metadata**: PostgreSQL (Neon).
+- **Queue**: Redis (Upstash).
+- **Semantic**: Vectorize (Cloudflare) for RAG-based architectural queries.
 
 ---
 
-### DATA_FLOW_PROTOCOL
+### DATA_FLOW_PROTOCOL (OXIDIZED)
 
-1. **INTAKE**: User submits GitHub URL.
-2. **ORCHESTRATION**: API adds job to BullMQ.
-3. **CLONING**: Worker clones source to ephemeral /tmp sandbox.
-4. **ANALYSIS**: Tree-sitter parses syntax; SystemAnalyzer parses workflows.
-5. **SYNTHESIS**: Gemini LLM generates structural Wiki chapters.
-6. **INDEXING**: Embeddings generated and pushed to Cloudflare Vectorize.
-7. **PERSISTENCE**: Results stored in PostgreSQL; cleanup initiated.
+1. **INGESTION**: User submits repository coordinates.
+2. **PARALLEL_FETCH**: Worker clones source to an ephemeral local buffer.
+3. **SEMANTIC_INDEXING**: 
+   - **OXC** parses syntax and resolves symbols.
+   - **SCIP** generates a symbolic dependency graph.
+4. **SYNTHESIS**: Gemini LLM generates structural Wiki chapters based on semantic symbols (not just text).
+5. **PERSISTENCE**: Results stored in PostgreSQL; symbolic map cached in Redis.
 
 ---
 
-### SECURITY_MODEL
+### ROBUSTNESS_FEATURES
 
-- Ephemeral storage for all code clones.
-- Isolated container runtime for all code execution (Sandbox).
-- Zero internet access for sandbox containers.
-- Encrypted secrets at rest.
+- **Zero-GIL Concurrency**: Multi-threaded parsing using Rust's Rayon.
+- **Compiler-Grade Accuracy**: Exact definition-to-reference mapping via SCIP.
+- **Memory Safety**: Arena-allocated ASTs for zero-leak performance.
+- **Isolated Runtimes**: Network-less Docker containers for verification.

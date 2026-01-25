@@ -42,10 +42,11 @@ Next.js 14 App Router, styled with a high-contrast monotone aesthetic and choreo
 
 ### TECHNICAL_SPECIFICATION
 
-- **Primary Stack**: TypeScript, Python, Node.js.
-- **AI Core**: Google Gemini 2.0 Flash / Pro.
-- **Data Layer**: Neon (PostgreSQL), Upstash (Redis), Cloudflare (Vectorize).
-- **Security**: 0px radius geometry, pure monotone contrast, zero-emoji protocol.
+- **Primary Stack**: TypeScript (Frontend), Rust / Python (Backend).
+- **Parsing Engine**: OXC (Oxidation Compiler), SCIP (Symbolic Indexing).
+- **AI Core**: Google Gemini 2.0 Thinking Models.
+- **Data Layer**: Neon (Postgres), Upstash (Redis), Cloudflare (Vectorize).
+- **Security**: 0px radius geometry, zero-emoji protocol, native Docker sandboxing.
 
 ---
 
