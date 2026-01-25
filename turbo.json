@@ -4,6 +4,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
+      "env": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "NEXT_PUBLIC_BETTER_AUTH_URL",
+        "GEMINI_API_KEY",
+        "NEXT_PUBLIC_API_URL"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "db:generate": {
