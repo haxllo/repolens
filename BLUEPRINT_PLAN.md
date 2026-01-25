@@ -23,10 +23,15 @@
 - [ ] **Semantic Hotspots**: Mapping risk scores directly to the 2D nodes.
 
 ### MILESTONE_05: OXIDIZED_CORE (NEW - HIGH PRIORITY)
-- [ ] **Rust Migration**: Rebuilding the Python worker in Rust for 100x speed.
-- [ ] **OXC Integration**: Replacing Tree-sitter with the ultra-fast OXC parser.
-- [ ] **SCIP Protocol**: Implementing symbolic indexing for exact code navigation.
+- [x] **Rust Migration**: Initial setup of oxc-based scanner in `apps/oxidizer`.
+- [x] **SCIP Protocol**: Symbolic indexing for JS/TS definitions and references.
+- [ ] **OXC Integration**: Replacing Tree-sitter with the ultra-fast OXC parser for all languages.
 - [ ] **Multi-Threaded Indexing**: Support for repositories with 1M+ lines of code.
+
+### MILESTONE_06: HYBRID_INTELLIGENCE // ARCHIVE_CORE (PLANNED)
+- [ ] **Phase 1: Local Embeddings**: Integrated local Hugging Face `sentence-transformers` for zero-cost indexing.
+- [ ] **Phase 2: Multi-Stage Synthesis**: Breaking Wiki generation into specialized stages (Data Mapping, Visual Logic, Strategic Narrative).
+- [ ] **Phase 3: Deep Symbolic Wiki**: Using SCIP data to generate precise "Symbol Tables" mapping architecture.
 
 ---
 

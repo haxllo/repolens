@@ -29,7 +29,8 @@ export class ChatService {
     }
 
     try {
-      // 1. Generate Query Embedding (768 dimensions)
+      // TODO: Transition to local BGE-small embeddings for 384-dim consistency with worker
+      // 1. Generate Query Embedding (Currently using Gemini 768-dim)
       const embeddingModel = this.gemini.getGenerativeModel({ model: "embedding-001" });
       const embeddingResult = await embeddingModel.embedContent(question);
       const queryVector = embeddingResult.embedding.values;

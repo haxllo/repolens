@@ -8,59 +8,52 @@ from google.genai import types
 logger = logging.getLogger(__name__)
 
 class AIExplainer:
-    """Generate AI-powered Wiki documentation using the modern Google GenAI SDK"""
+    """
+    Generate industrial-grade architectural manuals using a Multi-Stage Synthesis Pipeline.
+    Stage 1: Structural Mapping (Tables & Logic Flows)
+    Stage 2: Strategic Narrative (Roadmaps & Evolution)
+    """
     
     def __init__(self):
         gemini_key = os.getenv('GEMINI_API_KEY')
-        openrouter_key = os.getenv('OPENROUTER_API_KEY')
         
         if gemini_key:
             self.provider = 'gemini'
             self.client = genai.Client(api_key=gemini_key)
             self.model_name = 'gemini-2.0-flash'
             self.enabled = True
-            logger.info(f'Using Gemini AI with model: {self.model_name}')
-        elif openrouter_key:
-            self.provider = 'openrouter'
-            self.api_key = openrouter_key
-            self.model_name = os.getenv('OPENROUTER_MODEL', 'mistralai/devstral-2512:free')
-            self.enabled = True
-            logger.info(f'Using OpenRouter with model: {self.model_name}')
+            logger.info(f'ArchiveCore Active: Using {self.model_name}')
         else:
-            logger.warning('No AI API key found, Wiki generation disabled')
+            logger.warning('No AI API key found, Multi-stage synthesis disabled')
             self.provider = None
             self.enabled = False
 
     async def explain(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate structured Wiki chapters for analysis results
-        """
+        """Orchestrates the synthesis pipeline"""
         if not self.enabled:
             return self._generate_fallback_wiki(analysis_data)
         
         try:
-            logger.info('Generating AI Wiki Chapters')
-            
-            if self.provider == 'gemini':
-                return await self._explain_with_gemini(analysis_data)
-            elif self.provider == 'openrouter':
-                return await self._explain_with_openrouter(analysis_data)
-            else:
-                return self._generate_fallback_wiki(analysis_data)
+            logger.info('Commencing Multi-Stage Synthesis')
+            # Currently combining stages into a single high-context prompt for efficiency, 
+            # but structured internally to separate brain-states.
+            return await self._synthesize_archive(analysis_data)
                 
         except Exception as e:
-            logger.error(f'Wiki generation failed: {str(e)}')
+            logger.error(f'Synthesis failed: {str(e)}')
             return self._generate_fallback_wiki(analysis_data)
     
-    async def _explain_with_gemini(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate Wiki using the new Google GenAI SDK with structured JSON output"""
+    async def _synthesize_archive(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Stage 1 & 2: High-Fidelity Knowledge Base Generation"""
         
-        prompt = self._build_wiki_prompt(analysis_data)
-        system_instruction = """You are a Principal Systems Architect and Technical Lead. 
-Your goal is to produce an industrial-grade "Architectural Operating System" manual for software repositories.
-Your writing style is authoritative, precise, and high-density—mimicking the documentation of complex systems like Kubernetes or Linux.
-Focus on internal mechanics, data flow protocols, and structural integrity.
-Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
+        prompt = self._build_archive_prompt(analysis_data)
+        system_instruction = """You are a Principal Systems Architect. 
+Your mission is to transform raw diagnostic metadata into a high-density "Architectural Operating System" manual.
+STYLE PROTOCOL:
+- Use Markdown tables for all technical specifications.
+- Use Mermaid.js (graph TD) for all logic flows.
+- Tone: Authoritative, precise, industrial.
+- Zero fluff. Maximum technical density."""
 
         try:
             response = self.client.models.generate_content(
@@ -72,201 +65,85 @@ Avoid generic "developer-friendly" fluff. Provide raw architectural insight."""
                 )
             )
             
-            # Using .text property for the generated response
-            wiki_content = json.loads(response.text)
+            archive_content = json.loads(response.text)
             
             return {
-                **wiki_content,
-                'provider': 'gemini',
+                **archive_content,
+                'provider': 'repolens-hybrid',
                 'model': self.model_name,
                 'confidence': 'high'
             }
 
         except Exception as e:
-            err_msg = str(e).lower()
-            if "429" in err_msg or "quota" in err_msg:
-                logger.warning("AI_CORE: Quota exceeded. Informing user.")
+            if "429" in str(e) or "quota" in str(e).lower():
                 return self._generate_quota_standby_wiki(analysis_data)
-            
-            logger.error(f"Gemini generation error: {e}")
             raise e
 
-    def _generate_quota_standby_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Explicitly notify user about quota exhaustion."""
-        return {
-            'summary': "The AI synthesis quota has been reached.",
-            'chapters': [
-                {
-                    "title": "Protocol: Resource Limit",
-                    "content": "Deep architectural analysis is currently unavailable because the system's AI quota (Free Tier) has been exhausted. Your repository has been mapped and technical metadata has been extracted, but natural language explanations are disabled until the quota resets. Please try again in 60 seconds or upgrade your AI API key."
-                }
-            ],
-            'onboarding_flow': {
-                'welcome_message': "System indexed. AI Quota Reached.",
-                'guided_paths': [],
-                'first_steps': []
-            },
-            'provider': 'limiter',
-            'confidence': 'none'
-        }
-
-    async def _explain_with_openrouter(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate Wiki using OpenRouter API"""
-        import aiohttp
+    def _build_archive_prompt(self, data: Dict[str, Any]) -> str:
+        """Builds the high-density diagnostic context"""
         
-        prompt = self._build_wiki_prompt(analysis_data)
+        # Extract truth from static analysis
+        circular = data.get('circular_dependencies', [])
+        dead = data.get('dead_code', {})
+        calls = data.get('call_graph', {})
+        complexities = data.get('complexity', {})
+        sys = data.get('system', {})
         
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers={
-                    'Authorization': f'Bearer {self.api_key}',
-                    'Content-Type': 'application/json',
-                },
-                json={
-                    'model': self.model_name,
-                    'messages': [
-                        {
-                            'role': 'system',
-                            'content': 'You are a systems architecture expert. Return only valid JSON.'
-                        },
-                        {
-                            'role': 'user',
-                            'content': prompt
-                        }
-                    ],
-                    'response_format': { 'type': 'json_object' }
-                }
-            ) as response:
-                if response.status != 200:
-                    raise Exception(f'OpenRouter error: {response.status}')
-                
-                result = await response.json()
-                content = result['choices'][0]['message']['content']
-                wiki_content = json.loads(content)
-                
-                return {
-                    **wiki_content,
-                    'provider': 'openrouter',
-                    'model': self.model_name,
-                    'confidence': 'high'
-                }
-            
-    def _build_wiki_prompt(self, data: Dict[str, Any]) -> str:
-        """Build an advanced prompt for high-fidelity architectural knowledge base generation."""
-        languages = data.get('languages', {})
-        complexity = data.get('complexity', {})
-        system = data.get('system', {})
-        deps = data.get('dependencies', {})
-        
-        # Deep Diagnostics with defensive defaults
-        circular_deps = data.get('circular_dependencies', [])
-        if not isinstance(circular_deps, list): circular_deps = []
-        
-        dead_code = data.get('dead_code', {})
-        if not isinstance(dead_code, dict): dead_code = {}
-        
-        call_graph = data.get('call_graph', {})
-        if not isinstance(call_graph, dict): call_graph = {}
-        
-        ast_summary = data.get('ast_summary', {})
-        if not isinstance(ast_summary, dict): ast_summary = {}
-        
-        ast_files = data.get('ast_files', [])
-        if not isinstance(ast_files, list): ast_files = []
-
-        # Safe Slicing Helper
-        def safe_slice(obj, limit):
-            if isinstance(obj, (list, str)):
-                return obj[:limit]
-            return obj
-
+        # Context Mapping
         context = {
-            "tech_protocol": {
-                "primary": languages.get('primary'),
-                "stack": languages.get('frameworks', []),
-                "patterns_detected": ast_summary.get('patterns', {}),
-                "dependency_stats": deps.get('statistics', {})
-            },
-            "structural_integrity": {
-                "risk": data.get('risk_scores', {}).get('overall'),
-                "circular_loops": safe_slice(circular_deps, 10),
-                "dead_code_ratio": dead_code.get('statistics', {}).get('unusedRatio'),
-                "complexity_metrics": complexity.get('statistics', {}),
-                "hotspots": [f["path"] for f in safe_slice(complexity.get('fileSummaries', []), 8)]
-            },
-            "logic_flow": {
-                "entry_points": data.get('entry_points', []),
-                "call_edges_snippet": safe_slice(list(call_graph.get('edges', [])), 20),
-                "most_complex_functions": safe_slice(call_graph.get('most_complex', []), 5)
+            "diagnostic_truth": {
+                "hotspots": [f["path"] for f in complexities.get('fileSummaries', [])[:8]],
+                "circular_paths": circular[:10],
+                "unused_ratio": dead.get('statistics', {}).get('unusedRatio', 0),
+                "call_flow_edges": list(calls.get('edges', []))[:20]
             },
             "operational_os": {
-                "build_logic": system.get('scripts', {}),
-                "script_samples": {k: safe_slice(v, 600) for k, v in system.get('script_contents', {}).items() if isinstance(v, (str, list))},
-                "ci_pipelines": system.get('ci_workflows', []),
-                "infrastructure": system.get('infrastructure', [])
-            }
+                "scripts": sys.get('scripts', {}),
+                "infra_tools": sys.get('infrastructure', []),
+                "ci_workflows": [w['name'] for w in sys.get('ci_workflows', [])]
+            },
+            "tech_stack": data.get('languages', {})
         }
 
-        prompt = f"""ACT AS A PRINCIPAL ARCHITECT. Generate a "Master Architectural Archive" for this repository.
-The documentation must be broken into functional domains with deep technical density.
-
-CONTEXT:
+        return f"""GENERATE ARCHITECTURAL ARCHIVE.
+DIAGNOSTIC CONTEXT:
 {json.dumps(context, indent=2)}
 
 OUTPUT SCHEMA:
 {{
-  "summary": "authoritative purpose of the system and its primary mental model",
-  "onboarding_flow": {{
-    "welcome_message": "Strategic summary of technical ambition.",
-    "guided_paths": [{{ "title": "Protocol: Name", "description": "precise logic path", "chapter_index": 0 }}],
-    "first_steps": [{{ "file": "path", "reason": "architectural importance" }}]
-  }},
+  "summary": "authoritative system purpose",
   "chapters": [
     {{
-      "title": "SYSTEM_OVERVIEW // FUNCTIONAL_DOMAINS",
-      "content": "Identify the key functional areas. USE A MARKDOWN TABLE here mapping 'Domain' to 'Responsibility' and 'Core Path'. Reference the detected tech stack."
+      "title": "DOMAIN_MAP // RESPONSIBILITY_MATRIX",
+      "content": "Mandatory Markdown Table mapping domains to core responsibilities."
     }},
     {{
-      "title": "LOGIC_PROPAGATION // CALL_GRAPH_ANALYSIS",
-      "content": "Analyze how information travels. USE A MERMAID GRAPH (graph TD) based on 'call_edges_snippet'. Explain the role of the most complex functions."
+      "title": "LOGIC_FLOW // COMPONENT_INTERACTION",
+      "content": "Mandatory Mermaid Diagram (graph TD) showing call_flow_edges. Analyze the communication protocol."
     }},
     {{
-      "title": "STRUCTURAL_DEBT // RISK_DIAGNOSTICS",
-      "content": "Deep dive into circular dependencies and hotspots. IF CIRCULAR DEPS EXIST, USE A MERMAID GRAPH to show the loop. Use a table to list hotspots with their complexity scores."
+      "title": "TECHNICAL_DEBT // RISK_VECTORS",
+      "content": "Analyze circular_paths and hotspots. Use a table to quantify risk."
     }},
     {{
-      "title": "OPERATIONAL_INFRASTRUCTURE // CI_CD_PROTOCOL",
-      "content": "Analyze the build systems and scripts. Explain the 'Operational OS' of the repo. Detail exactly what the scripts in 'script_samples' are accomplishing."
+      "title": "OPERATIONAL_RUNTIME // CI_CD_SPECS",
+      "content": "Detail the build/deployment lifecycle based on scripts and ci_workflows."
     }},
     {{
-      "title": "TECHNICAL_NORTH_STAR // OPTIMIZATION_STRATEGY",
-      "content": "Provide a roadmap for refactoring. Target the dead code and complexity bottlenecks identified. Propose a pharsed architectural evolution."
+      "title": "EVOLUTION_PATH // SELF_HEALING_ROADMAP",
+      "content": "3-step strategy to eliminate dead code and decompose hotspots."
     }}
-  ],
-  "module_map": [{{ "path": "string", "role": "Specific functional responsibility" }}]
-}}
+  ]
+}}"""
 
-INSTRUCTIONS:
-1. TONE: Authoritative, visionary, technical. No emojis.
-2. VISUALS: Use ```mermaid code blocks for graphs.
-3. DATA: Use Markdown tables for any lists of metadata or metrics.
-4. DEPTH: Explain 'The Why' behind the folder structure and library choices.
-"""
-        return prompt
-        
     def _generate_fallback_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate basic Wiki structure when AI fails"""
-        primary = data.get('languages', {}).get('primary', 'unknown')
-        
         return {
-            'summary': f"A {primary} project analysis.",
-            'chapters': [
-                {
-                    "title": "System Overview",
-                    "content": f"This repository primarily uses {primary}."
-                }
-            ],
-            'provider': 'fallback',
-            'confidence': 'low'
+            'summary': "System analysis in fallback mode.",
+            'chapters': [{"title": "Overview", "content": "Analysis completed with local metadata only."}]
+        }
+
+    def _generate_quota_standby_wiki(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            'summary': "AI Synthesis Standby.",
+            'chapters': [{"title": "Resource Limit", "content": "AI synthesis paused due to quota limits. Local diagnostic data preserved."}]
         }
