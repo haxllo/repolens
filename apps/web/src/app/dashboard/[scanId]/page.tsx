@@ -7,6 +7,7 @@ import { motion } from 'motion/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import OverviewTab from '@/components/scan/OverviewTab'
+import { SymbolArchive } from '@/components/dashboard/SymbolArchive'
 import { 
   ArrowLeft, 
   GitBranch, 
@@ -18,7 +19,8 @@ import {
   ChevronRight,
   Maximize2,
   Box,
-  Bookmark
+  Bookmark,
+  Hash
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
@@ -45,7 +47,7 @@ export default function ScanDetailPage() {
   const [scan, setScan] = useState<ScanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeView, setActiveView] = useState<'archive' | 'spatial'>('archive')
+  const [activeView, setActiveView] = useState<'archive' | 'spatial' | 'symbols'>('archive')
   const [isBookmarked, setIsBookmarked] = useState(false)
 
   const fetchScanData = async () => {
@@ -196,6 +198,13 @@ export default function ScanDetailPage() {
                             <Box className="w-3 h-3" />
                             Spatial Map
                         </button>
+                        <button 
+                            onClick={() => setActiveView('symbols')}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'symbols' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                        >
+                            <Hash className="w-3 h-3" />
+                            Symbol Registry
+                        </button>
                     </div>
                 )}
             </div>
@@ -250,6 +259,8 @@ export default function ScanDetailPage() {
         <div className="animate-in fade-in duration-1000">
            {activeView === 'archive' ? (
                <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
+           ) : activeView === 'symbols' ? (
+               <SymbolArchive data={scan.results} />
            ) : (
                <BlueprintCanvas data={scan.results} />
            )}

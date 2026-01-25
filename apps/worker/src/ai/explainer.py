@@ -35,8 +35,6 @@ class AIExplainer:
         
         try:
             logger.info('Commencing Multi-Stage Synthesis')
-            # Currently combining stages into a single high-context prompt for efficiency, 
-            # but structured internally to separate brain-states.
             return await self._synthesize_archive(analysis_data)
                 
         except Exception as e:
@@ -75,32 +73,49 @@ STYLE PROTOCOL:
             }
 
         except Exception as e:
-            if "429" in str(e) or "quota" in str(e).lower():
+            err_msg = str(e).lower()
+            if "429" in err_msg or "quota" in err_msg:
                 return self._generate_quota_standby_wiki(analysis_data)
             raise e
 
     def _build_archive_prompt(self, data: Dict[str, Any]) -> str:
-        """Builds the high-density diagnostic context"""
+        """Builds the high-density diagnostic context with safe data extraction"""
         
-        # Extract truth from static analysis
-        circular = data.get('circular_dependencies', [])
-        dead = data.get('dead_code', {})
-        calls = data.get('call_graph', {})
-        complexities = data.get('complexity', {})
-        sys = data.get('system', {})
+        # Helper for safe slicing
+        def safe_slice(obj, limit):
+            if isinstance(obj, (list, str)):
+                return obj[:limit]
+            return obj
+
+        # Extract truth with defensive defaults
+        circular_data = data.get('circular_dependencies', {})
+        if not isinstance(circular_data, dict): circular_data = {}
+        circular_list = circular_data.get('cycles', [])
+        
+        dead_data = data.get('dead_code', {})
+        if not isinstance(dead_data, dict): dead_data = {}
+        
+        call_data = data.get('call_graph', {})
+        if not isinstance(call_data, dict): call_data = {}
+        
+        comp_data = data.get('complexity', {})
+        if not isinstance(comp_data, dict): comp_data = {}
+        
+        sys_data = data.get('system', {})
+        if not isinstance(sys_data, dict): sys_data = {}
         
         # Context Mapping
         context = {
             "diagnostic_truth": {
-                "hotspots": [f["path"] for f in complexities.get('fileSummaries', [])[:8]],
-                "circular_paths": circular[:10],
-                "unused_ratio": dead.get('statistics', {}).get('unusedRatio', 0),
-                "call_flow_edges": list(calls.get('edges', []))[:20]
+                "hotspots": [f["path"] for f in safe_slice(comp_data.get('fileSummaries', []), 8)],
+                "circular_paths": safe_slice(circular_list, 10),
+                "unused_ratio": dead_data.get('statistics', {}).get('unusedRatio', 0),
+                "call_flow_edges": safe_slice(list(call_data.get('edges', [])), 20)
             },
             "operational_os": {
-                "scripts": sys.get('scripts', {}),
-                "infra_tools": sys.get('infrastructure', []),
-                "ci_workflows": [w['name'] for w in sys.get('ci_workflows', [])]
+                "scripts": sys_data.get('scripts', {}),
+                "infra_tools": sys_data.get('infrastructure', []),
+                "ci_workflows": [w['name'] for w in sys_data.get('ci_workflows', []) if isinstance(w, dict) and 'name' in w]
             },
             "tech_stack": data.get('languages', {})
         }
@@ -123,7 +138,7 @@ OUTPUT SCHEMA:
     }},
     {{
       "title": "TECHNICAL_DEBT // RISK_VECTORS",
-      "content": "Analyze circular_paths and hotspots. Use a table to quantify risk."
+      "content": "Analyze circular_paths and hotspots. Use a table to list hotspots with their complexity."
     }},
     {{
       "title": "OPERATIONAL_RUNTIME // CI_CD_SPECS",
