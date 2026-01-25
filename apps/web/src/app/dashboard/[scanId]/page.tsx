@@ -17,12 +17,15 @@ import {
   BookOpen,
   ChevronRight,
   Maximize2,
-  Box
+  Box,
+  Bookmark
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
+import { apiClient } from '@/lib/api-client'
 
 interface ScanData {
+  id: string
   scanId: string
   status: string
   repoUrl: string
@@ -32,6 +35,7 @@ interface ScanData {
   results?: any
   progress?: number
   error?: string
+  repositoryId?: string
 }
 
 export default function ScanDetailPage() {
@@ -41,6 +45,7 @@ export default function ScanDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeView, setActiveView] = useState<'archive' | 'spatial'>('archive')
+  const [isBookmarked, setIsBookmarked] = useState(false)
 
   const fetchScanData = async () => {
     try {
@@ -51,10 +56,40 @@ export default function ScanDetailPage() {
       const data = await response.json()
       setScan(data)
       setError('')
+      
+      // Check if already bookmarked
+      if (data.repositoryId) {
+        checkBookmarkStatus(data.repositoryId)
+      }
     } catch (err: any) {
       setError(err.message || 'Connection interrupted')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkBookmarkStatus = async (repoId: string) => {
+    try {
+      const favorites = await apiClient.get<any[]>('/favorites')
+      setIsBookmarked(favorites.some(f => f.repositoryId === repoId))
+    } catch (e) {
+      console.error('Status check failed')
+    }
+  }
+
+  const toggleBookmark = async () => {
+    if (!scan?.repositoryId) return
+    try {
+      if (isBookmarked) {
+        await apiClient.delete(`/favorites/${scan.repositoryId}`)
+        toast.success('Record removed from vault.')
+      } else {
+        await apiClient.post('/favorites', { repositoryId: scan.repositoryId })
+        toast.success('Record verified and vaulted.')
+      }
+      setIsBookmarked(!isBookmarked)
+    } catch (e) {
+      toast.error('Vault protocol failed.')
     }
   }
 
@@ -129,24 +164,40 @@ export default function ScanDetailPage() {
         </div>
 
         <div className="flex flex-col md:items-end gap-6">
-            {isCompleted && (
-                <div className="flex bg-black border border-white/10 p-1">
+            <div className="flex items-center gap-4">
+                {isCompleted && (
                     <button 
-                        onClick={() => setActiveView('archive')}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'archive' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                        onClick={toggleBookmark}
+                        className={cn(
+                            "p-3 border transition-all",
+                            isBookmarked 
+                                ? "bg-lime-400 border-lime-400 text-black" 
+                                : "bg-black border-white/10 text-white/20 hover:text-white"
+                        )}
+                        title={isBookmarked ? "Erase from Vault" : "Vault Record"}
                     >
-                        <BookOpen className="w-3 h-3" />
-                        Archive View
+                        <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
                     </button>
-                    <button 
-                        onClick={() => setActiveView('spatial')}
-                        className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'spatial' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
-                    >
-                        <Box className="w-3 h-3" />
-                        Spatial Map
-                    </button>
-                </div>
-            )}
+                )}
+                {isCompleted && (
+                    <div className="flex bg-black border border-white/10 p-1">
+                        <button 
+                            onClick={() => setActiveView('archive')}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'archive' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                        >
+                            <BookOpen className="w-3 h-3" />
+                            Archive View
+                        </button>
+                        <button 
+                            onClick={() => setActiveView('spatial')}
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'spatial' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
+                        >
+                            <Box className="w-3 h-3" />
+                            Spatial Map
+                        </button>
+                    </div>
+                )}
+            </div>
             <div className={`flex items-center gap-3 px-6 py-3 border border-white/10 bg-black`}>
                 {getStatusIcon(scan.status)}
                 <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
