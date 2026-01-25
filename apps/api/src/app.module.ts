@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { BullModule } from '@nestjs/bullmq'
 import { ThrottlerModule } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core'
@@ -26,16 +26,22 @@ import { HealthController } from './health.controller'
         limit: 10,
       },
     ]),
-    BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-        tls: process.env.REDIS_HOST?.includes('upstash.io')
-          ? {
-              rejectUnauthorized: false,
-            }
-          : undefined,
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST') || 'localhost';
+        return {
+          connection: {
+            host,
+            port: parseInt(configService.get<string>('REDIS_PORT') || '6379'),
+            password: configService.get<string>('REDIS_PASSWORD'),
+            tls: host.includes('upstash.io')
+              ? {
+                  rejectUnauthorized: false,
+                }
+              : undefined,
+          },
+        };
       },
     }),
     PrismaModule,
