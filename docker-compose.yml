@@ -48,8 +48,8 @@ services:
 
   worker:
     build:
-      context: apps/worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/worker/Dockerfile
     container_name: repolens-worker
     env_file:
       - .env
