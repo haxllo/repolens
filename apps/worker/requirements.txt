@@ -18,3 +18,4 @@ aiobotocore==2.11.2
 docker==7.1.0
 requests<2.32.0
 PyYAML==6.0.1
+pinecone-client>=3.0.0

@@ -148,43 +148,46 @@ class AnalysisOrchestrator:
             # Step 13: Semantic Indexing (Vectorize)
             if self.vector_storage.enabled:
                 logger.info('Step 13: Generating semantic embeddings for Code Wiki')
-                # Identify high-value files (entry points, readme, config)
+                # Clear existing namespace for this scan if it exists (re-scan safety)
+                await self.vector_storage.delete_namespace(scan_id)
+
+                # Identify high-value files
                 key_files = [f for f in ast_data.get('files', []) if f['path'] in ast_data.get('entryPoints', []) or 'readme' in f['path'].lower()]
                 
-                # If few key files, take top files by complexity
                 if len(key_files) < 5:
                     sorted_files = sorted(ast_data.get('files', []), key=lambda x: x.get('functions', 0), reverse=True)
                     key_files.extend(sorted_files[:5])
                 
-                # Prepare chunks for embedding
+                # Prepare chunks
+                vectors_to_upsert = []
                 chunks = []
                 chunk_metadata = []
                 
-                for file_data in key_files[:10]: # Limit to top 10 for MVP speed
-                    # Create a rich summary representation
-                    content_summary = f"File: {file_data['path']}\nType: {file_data['language']}\nFunctions: {file_data.get('functions', 0)}\nClasses: {file_data.get('classes', 0)}"
+                for file_data in key_files[:15]: # Expanded to top 15 files
+                    content_summary = f"Path: {file_data['path']}\n"
+                    content_summary += f"Functions: {file_data.get('functions', 0)}\n"
+                    content_summary += f"Classes: {file_data.get('classes', 0)}\n"
+                    
                     chunks.append(content_summary)
                     chunk_metadata.append({
-                        "id": f"{scan_id}_{file_data['path']}",
-                        "values": [], # Placeholder, filled by generate_embeddings
+                        "id": f"{scan_id}_{file_data['path'].replace('/', '_')}",
                         "metadata": {
                             "scanId": scan_id,
-                            "path": file_data['path'],
-                            "language": file_data['language']
+                            "file_path": file_data['path'],
+                            "language": file_data['language'],
+                            "content_snippet": content_summary
                         }
                     })
                 
                 if chunks:
                     embeddings = await self.vector_storage.generate_embeddings(chunks)
                     if embeddings:
-                        # Combine embeddings with metadata
-                        vectors_to_upsert = []
                         for i, emb in enumerate(embeddings):
-                            vector_record = chunk_metadata[i]
-                            vector_record['values'] = emb
-                            vectors_to_upsert.append(vector_record)
+                            record = chunk_metadata[i]
+                            record['values'] = emb
+                            vectors_to_upsert.append(record)
                         
-                        await self.vector_storage.upsert_vectors(vectors_to_upsert)
+                        await self.vector_storage.upsert_vectors(vectors_to_upsert, namespace=scan_id)
 
             # Cleanup
             await self.repo_cloner.cleanup(repo_path)

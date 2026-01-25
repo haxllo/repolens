@@ -1,40 +1,47 @@
 import os
 import logging
-import aiohttp
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
+from pinecone import Pinecone
 
 logger = logging.getLogger(__name__)
 
 class VectorStorage:
-    """Handles semantic code indexing using Cloudflare Vectorize and Gemini Embeddings"""
+    """
+    Handles semantic code indexing using Pinecone and Gemini Embeddings.
+    Provides the memory layer for RAG-based architectural chat.
+    """
     
     def __init__(self):
-        self.account_id = os.getenv('CLOUDFLARE_ACCOUNT_ID')
-        self.api_token = os.getenv('CLOUDFLARE_API_TOKEN')
-        self.index_name = os.getenv('VECTORIZE_INDEX_NAME', 'repolens-index')
+        # Pinecone Config
+        self.pinecone_key = os.getenv('PINECONE_API_KEY')
+        self.index_name = os.getenv('PINECONE_INDEX_NAME', 'repolens-rag')
         
-        # Initialize Gemini for embeddings
+        # Gemini Config (Latest text-embedding-004 produces 768 dimensions)
         gemini_key = os.getenv('GEMINI_API_KEY')
-        if gemini_key:
+        
+        if gemini_key and self.pinecone_key:
             genai.configure(api_key=gemini_key)
-            self.embedding_model = 'models/embedding-001'
-            self.enabled = True
-        else:
-            logger.warning("Gemini API key missing. Vector storage disabled.")
-            self.enabled = False
+            self.embedding_model = 'models/text-embedding-004'
             
-        if not self.account_id or not self.api_token:
-            logger.warning("Cloudflare credentials missing. Vector storage disabled.")
+            try:
+                self.pc = Pinecone(api_key=self.pinecone_key)
+                self.index = self.pc.Index(self.index_name)
+                self.enabled = True
+                logger.info(f"VectorStore active: Connected to Pinecone index '{self.index_name}'")
+            except Exception as e:
+                logger.error(f"Failed to connect to Pinecone: {str(e)}")
+                self.enabled = False
+        else:
+            logger.warning("PINECONE_API_KEY or GEMINI_API_KEY missing. Vector storage disabled.")
             self.enabled = False
 
     async def generate_embeddings(self, text_chunks: List[str]) -> List[List[float]]:
-        """Generate embeddings for a list of text chunks using Gemini"""
+        """Generate 768-dimensional embeddings using Google's text-embedding-004"""
         if not self.enabled:
             return []
             
         try:
-            # Gemini batch embedding
             result = genai.embed_content(
                 model=self.embedding_model,
                 content=text_chunks,
@@ -45,43 +52,30 @@ class VectorStorage:
             logger.error(f"Failed to generate embeddings: {str(e)}")
             return []
 
-    async def upsert_vectors(self, vectors: List[Dict[str, Any]]) -> bool:
+    async def upsert_vectors(self, vectors: List[Dict[str, Any]], namespace: str) -> bool:
         """
-        Upsert vectors to Cloudflare Vectorize via REST API
-        vectors: List of { id, values, metadata }
+        Upsert vectors to Pinecone. 
+        Uses repository ID as the namespace for strict data isolation.
         """
-        if not self.enabled:
+        if not self.enabled or not self.index:
             return False
 
-        url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/vectorize/indexes/{self.index_name}/insert"
-        
         try:
-            async with aiohttp.ClientSession() as session:
-                # Cloudflare Vectorize expects NDJSON (newline delimited JSON) for inserts
-                # or a standard JSON array depending on the endpoint version. 
-                # Using standard JSON array format for the v4 API.
-                
-                async with session.post(
-                    url,
-                    headers={
-                        "Authorization": f"Bearer {self.api_token}",
-                        "Content-Type": "application/json"
-                    },
-                    json=vectors
-                ) as response:
-                    if response.status != 200:
-                        text = await response.text()
-                        logger.error(f"Vectorize upsert failed ({response.status}): {text}")
-                        return False
-                    
-                    return True
+            # Pinecone expects: {"id": "...", "values": [...], "metadata": {...}}
+            # We process in batches of 100 for safety
+            for i in range(0, len(vectors), 100):
+                batch = vectors[i:i + 100]
+                self.index.upsert(vectors=batch, namespace=namespace)
+            
+            logger.info(f"Successfully indexed {len(vectors)} chunks in namespace: {namespace}")
+            return True
         except Exception as e:
-            logger.error(f"Vector storage error: {str(e)}")
+            logger.error(f"Pinecone upsert failed: {str(e)}")
             return False
 
-    async def query_vectors(self, query_text: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """Query the vector index semantically"""
-        if not self.enabled:
+    async def query_vectors(self, query_text: str, namespace: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Semantic search within a specific repository's namespace"""
+        if not self.enabled or not self.index:
             return []
 
         try:
@@ -93,27 +87,33 @@ class VectorStorage:
             )
             query_vector = embedding_result['embedding']
 
-            url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/vectorize/indexes/{self.index_name}/query"
+            # Query Pinecone
+            results = self.index.query(
+                namespace=namespace,
+                vector=query_vector,
+                top_k=top_k,
+                include_metadata=True
+            )
             
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    headers={
-                        "Authorization": f"Bearer {self.api_token}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "vector": query_vector,
-                        "topK": top_k,
-                        "returnMetadata": True
-                    }
-                ) as response:
-                    if response.status != 200:
-                        return []
-                    
-                    data = await response.json()
-                    return data.get('result', {}).get('matches', [])
+            return [
+                {
+                    "id": match['id'],
+                    "score": match['score'],
+                    "metadata": match['metadata']
+                }
+                for match in results['matches']
+            ]
                     
         except Exception as e:
             logger.error(f"Vector query failed: {str(e)}")
             return []
+
+    async def delete_namespace(self, namespace: str):
+        """Cleanup namespace (useful for re-scanning)"""
+        if not self.enabled or not self.index:
+            return
+        try:
+            self.index.delete(delete_all=True, namespace=namespace)
+            logger.info(f"Cleared vector namespace: {namespace}")
+        except Exception:
+            pass
