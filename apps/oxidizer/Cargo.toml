@@ -5,10 +5,10 @@ edition = "2021"
 
 [dependencies]
 # OXC: The High-Performance Oxidation Compiler
-oxc_parser = "0.56.6"
-oxc_allocator = "0.56.6"
-oxc_span = "0.56.6"
-oxc_ast = "0.56.6"
+oxc_parser = "0.110.0"
+oxc_allocator = "0.110.0"
+oxc_span = "0.110.0"
+oxc_ast = "0.110.0"
 
 # Serialization & Parallelism
 serde = { version = "1.0", features = ["derive"] }
