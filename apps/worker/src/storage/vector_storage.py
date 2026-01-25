@@ -18,7 +18,7 @@ class VectorStorage:
     def __init__(self):
         # Pinecone Config
         self.pinecone_key = os.getenv('PINECONE_API_KEY')
-        self.index_name = os.getenv('PINECONE_INDEX_NAME', 'repolens-rag')
+        self.index_name = os.getenv('PINECONE_INDEX_NAME', 'repolens-v2')
         
         if self.pinecone_key:
             try:

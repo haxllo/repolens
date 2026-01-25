@@ -13,7 +13,7 @@ export class ChatService {
   constructor(private configService: ConfigService) {
     const pineconeKey = this.configService.get<string>('PINECONE_API_KEY');
     const geminiKey = this.configService.get<string>('GEMINI_API_KEY');
-    this.indexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'repolens-rag');
+    this.indexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'repolens-v2');
 
     if (pineconeKey) {
       this.pc = new Pinecone({ apiKey: pineconeKey });
