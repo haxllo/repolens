@@ -30,7 +30,7 @@ export function DeadCodeDisplay({ data }: DeadCodeDisplayProps) {
     return (
       <div className="glass rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-none bg-lime-400/10 flex items-center justify-center">
             <CheckCircle className="h-5 w-5 text-lime-400" />
           </div>
           <div>
@@ -45,7 +45,7 @@ export function DeadCodeDisplay({ data }: DeadCodeDisplayProps) {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-none bg-yellow-400/10 flex items-center justify-center">
           <Trash2 className="h-5 w-5 text-yellow-400" />
         </div>
         <div>
@@ -58,19 +58,19 @@ export function DeadCodeDisplay({ data }: DeadCodeDisplayProps) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+        <div className="p-4 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
           <p className="text-2xl font-bold">{statistics.total_exports}</p>
           <p className="text-xs text-white/40 mt-1">Total Exports</p>
         </div>
-        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+        <div className="p-4 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
           <p className="text-2xl font-bold text-yellow-400">{statistics.total_unused_exports}</p>
           <p className="text-xs text-white/40 mt-1">Unused Exports</p>
         </div>
-        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+        <div className="p-4 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
           <p className="text-2xl font-bold text-red-400">{statistics.total_unused_imports || 0}</p>
           <p className="text-xs text-white/40 mt-1">Unused Imports</p>
         </div>
-        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+        <div className="p-4 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
           <p className="text-2xl font-bold">{data.risk_score}</p>
           <p className="text-xs text-white/40 mt-1">Risk Score</p>
         </div>
@@ -84,7 +84,7 @@ export function DeadCodeDisplay({ data }: DeadCodeDisplayProps) {
             {statistics.unused_export_percentage?.toFixed(1) || 0}%
           </span>
         </div>
-        <div className="w-full bg-white/5 rounded-full h-2">
+        <div className="w-full bg-white/5 rounded-none h-2">
           <div
             className="bg-yellow-400 h-2 rounded-full transition-all"
             style={{ width: `${Math.min(statistics.unused_export_percentage || 0, 100)}%` }}
@@ -100,7 +100,7 @@ export function DeadCodeDisplay({ data }: DeadCodeDisplayProps) {
             {Object.entries(data.unused_exports)
               .slice(0, 10)
               .map(([file, exports]) => (
-                <div key={file} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div key={file} className="p-3 rounded-none bg-white/[0.02] border border-white/[0.06]">
                   <code className="text-xs text-lime-400/70 block truncate mb-2">{file}</code>
                   <div className="flex flex-wrap gap-1">
                     {exports.map((exp) => (

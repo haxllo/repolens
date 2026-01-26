@@ -3,7 +3,6 @@
 ---
 
 ### CURRENT_BUILD: v2.2.0-PROD (2026-01-25)
-**Aesthetic Standard**: Robust Monotone Premium.
 **Operational Base**: AWS EC2 (Backend) + Vercel (Frontend).
 
 ---

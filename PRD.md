@@ -1,49 +1,34 @@
 # RepoLens Product Requirements Document (PRD)
 
 ## Product Vision
-Provide developers a **structured, explainable understanding of any repository** via static analysis + AI-assisted explanations.
+Transform complex software repositories into an **Interactive Architectural Operating System**—a high-performance, navigable, and executable knowledge base.
 
 ---
 
 ## Problem Statement
-- Developers spend hours navigating unfamiliar repos.
-- READMEs are often incomplete or misleading.
-- AI-only tools may hallucinate architecture or purpose.
-
----
-
-## Users
-- Primary: Developers, open-source contributors
-- Secondary: Hiring managers, tech leads, recruiters
-
----
-
-## User Stories
-1. Understand repo purpose in minutes
-2. See which files to read first
-3. Detect tech debt & risk
-4. Receive actionable README improvement suggestions
+- Developers spend hours navigating unfamiliar repos without a ground-truth mental model.
+- Static documentation is passive and quickly becomes decoupled from source reality.
+- Traditional AI tools lack the deterministic grounding of AST-aware analysis.
 
 ---
 
 ## Features
 
-### Core
-- Repo intake (public / private repos)
-- Static analysis (AST parsing, dependency graphs)
-- Risk & maintainability scoring
-- Entry-point mapping
+### Core: Architectural Intelligence
+- **Intake Protocol**: Public/Private repository synchronization.
+- **Deep Analysis**: AST-aware parsing, symbolic dependency mapping, and circular reference detection.
+- **Risk Assessment**: Deterministic scoring for maintainability, dead code, and architectural complexity.
+- **Entry-point Mapping**: Automated discovery of system initialization paths.
 
-### AI-augmented
-- Explain deterministic outputs in natural language
-- Suggest README improvements
-- Confidence-tagged explanations
+### HUD: Interaction Layer
+- **Command Center**: A high-density dashboard for managing repository archives.
+- **Spatial Mapping**: 2D/3D interactive visualization of module hierarchies and hotspots.
+- **Technical Wiki**: Neural-synthesized documentation with embedded executable code modules.
+- **Protocol Registry**: Historical tracking and favoritism of verified architectures.
 
-### Outputs
-- Overview summary
-- Dependency visualization
-- Risk dashboard
-- README improvement report
+### Runtime: Verification Layer
+- **Native Sandbox**: Isolated Docker-based environment for real-time snippet execution.
+- **Logic Verification**: Automated validation of code logic via sandboxed test runs.
 
 ---
 
@@ -81,6 +66,7 @@ Provide developers a **structured, explainable understanding of any repository**
 ---
 
 ## Roadmap
-1. **MVP:** Public repos, basic analysis, AI explanations
-2. **Pro:** Private repos, CI/CD integration, architecture diagrams
-3. **Enterprise:** Org-wide dashboards, historical analysis, audit reports
+1. **Intelligence Base:** Public repo indexing, AST parsing, and neural-synthesized summaries.
+2. **Diagnostic Core:** Private repo support, dead code detection, circular dependency analysis, and native sandbox execution.
+3. **Oxidized Engine:** Porting analysis to Rust (OXC/SCIP) for 100x performance and multi-million line repository support.
+4. **Spatial OS:** Full integration of spatial hotspots, refactor suggestions, and automated test generation.

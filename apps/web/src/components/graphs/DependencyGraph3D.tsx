@@ -284,7 +284,7 @@ export default function DependencyGraph3D({ data, onNodeClick }: DependencyGraph
         </Suspense>
       </Canvas>
       <div className="absolute top-4 left-4 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-xl text-[10px] text-white/60 space-y-1">
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-none text-[10px] text-white/60 space-y-1">
           <p>• Drag to rotate</p>
           <p>• Scroll to zoom</p>
           <p>• Hover nodes for names</p>

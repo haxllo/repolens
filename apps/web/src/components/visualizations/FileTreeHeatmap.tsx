@@ -83,7 +83,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-xl shadow-2xl">
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-none shadow-2xl">
           <p className="font-bold text-white text-base mb-1">{data.name}</p>
           <p className="text-white/40 text-[10px] font-mono break-all mb-3">{data.path}</p>
           <div className="space-y-1.5">
@@ -114,7 +114,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
 
   if (files.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[500px] text-white/50 bg-white/[0.02] rounded-xl border border-dashed border-white/10">
+      <div className="flex items-center justify-center h-[500px] text-white/50 bg-white/[0.02] rounded-none border border-dashed border-white/10">
         No file data available for heatmap
       </div>
     );
@@ -129,7 +129,7 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
             Size represents Lines of Code, Color represents Risk Level
           </p>
         </div>
-        <div className="flex gap-3 bg-black/40 p-2 rounded-xl border border-white/5">
+        <div className="flex gap-3 bg-black/40 p-2 rounded-none border border-white/5">
           {[
             { label: 'Low', color: 'bg-lime-400' },
             { label: 'Med', color: 'bg-yellow-500' },

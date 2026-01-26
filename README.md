@@ -36,7 +36,7 @@ The backend is optimized for AWS EC2 (t3.small) to support native Docker executi
 Refer to [docs/EC2_DEPLOYMENT.md](./docs/EC2_DEPLOYMENT.md) for initialization instructions.
 
 #### FRONTEND_LAYER (VERCEL)
-Next.js 14 App Router, styled with a high-contrast monotone aesthetic and choreographed motion design.
+Next.js 14 App Router, optimized for performance and responsive user experiences.
 
 ---
 
@@ -46,7 +46,7 @@ Next.js 14 App Router, styled with a high-contrast monotone aesthetic and choreo
 - **Parsing Engine**: OXC (Oxidation Compiler), SCIP (Symbolic Indexing).
 - **AI Core**: Google Gemini 2.0 Thinking Models.
 - **Data Layer**: Neon (Postgres), Upstash (Redis), Cloudflare (Vectorize).
-- **Security**: 0px radius geometry, zero-emoji protocol, native Docker sandboxing.
+- **Security**: Native Docker sandboxing for isolated execution.
 
 ---
 

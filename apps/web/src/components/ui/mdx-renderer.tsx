@@ -22,7 +22,7 @@ const components = {
       tip: 'bg-purple-400/10 border-purple-400/20 text-purple-200',
     }
     return (
-      <div className={`flex gap-3 p-4 rounded-xl border my-4 ${colors[type]}`}>
+      <div className={`flex gap-3 p-4 rounded-none border my-4 ${colors[type]}`}>
         <div className="mt-0.5">{icons[type]}</div>
         <div className="text-sm leading-relaxed">{children}</div>
       </div>
@@ -38,7 +38,7 @@ const components = {
     <code className="bg-white/10 rounded px-1.5 py-0.5 font-mono text-sm text-lime-300" {...props} />
   ),
   pre: (props: any) => (
-    <pre className="bg-black/40 border border-white/10 rounded-xl p-4 overflow-x-auto mb-4 font-mono text-sm" {...props} />
+    <pre className="bg-black/40 border border-white/10 rounded-none p-4 overflow-x-auto mb-4 font-mono text-sm" {...props} />
   ),
 }
 

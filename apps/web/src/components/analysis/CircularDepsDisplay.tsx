@@ -70,7 +70,7 @@ export function CircularDepsDisplay({ data }: CircularDepsDisplayProps) {
         <div className="space-y-3">
           <h4 className="font-semibold text-sm">Dependency Chains:</h4>
           {data.cycles.slice(0, 5).map((cycle, idx) => (
-            <div key={idx} className="p-3 border rounded-lg space-y-2">
+            <div key={idx} className="p-3 border rounded-none space-y-2">
               <div className="flex items-center justify-between">
                 <Badge variant={getSeverityColor(cycle.severity) as any}>
                   {cycle.severity} severity

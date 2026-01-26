@@ -277,17 +277,17 @@ export function DependencyGraph2D({
       
       {/* Legend & Controls UI remains similar but polished */}
       <div className="absolute bottom-4 left-4 flex gap-4 items-center">
-        <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 rounded-xl flex gap-4 text-[10px]">
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-lime-400" /> <span className="text-white/60">Root</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" /> <span className="text-white/60">Module</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-500" /> <span className="text-white/60">Package</span></div>
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2 rounded-none flex gap-4 text-[10px]">
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-none bg-lime-400" /> <span className="text-white/60">Root</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-none bg-blue-500" /> <span className="text-white/60">Module</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-none bg-amber-500" /> <span className="text-white/60">Package</span></div>
         </div>
       </div>
 
       <div className="absolute top-4 right-4 flex flex-col gap-2">
-        <button onClick={() => setScale(s => Math.min(5, s * 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-lg hover:bg-white/10">+</button>
-        <button onClick={() => setScale(s => Math.max(0.1, s / 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-lg hover:bg-white/10">-</button>
-        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-2 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] rounded-lg hover:bg-white/10">Reset</button>
+        <button onClick={() => setScale(s => Math.min(5, s * 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-none hover:bg-white/10">+</button>
+        <button onClick={() => setScale(s => Math.max(0.1, s / 1.2))} className="w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 text-white rounded-none hover:bg-white/10">-</button>
+        <button onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} className="px-2 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] rounded-none hover:bg-white/10">Reset</button>
       </div>
     </div>
   )

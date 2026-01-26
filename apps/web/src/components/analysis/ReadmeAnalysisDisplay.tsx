@@ -44,7 +44,7 @@ export function ReadmeAnalysisDisplay({ data }: ReadmeAnalysisDisplayProps) {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-lime-400/10 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-none bg-lime-400/10 flex items-center justify-center">
           <FileText className="h-5 w-5 text-lime-400" />
         </div>
         <div>
@@ -63,9 +63,9 @@ export function ReadmeAnalysisDisplay({ data }: ReadmeAnalysisDisplayProps) {
             <span className="text-white/50">Quality Score</span>
             <span className="font-medium">{data.quality_score?.toFixed(1) || 0}/100</span>
           </div>
-          <div className="w-full bg-white/5 rounded-full h-3">
+          <div className="w-full bg-white/5 rounded-none h-3">
             <div
-              className="bg-lime-400 h-3 rounded-full transition-all"
+              className="bg-lime-400 h-3 rounded-none transition-all"
               style={{ width: `${data.quality_score || 0}%` }}
             />
           </div>
@@ -75,17 +75,17 @@ export function ReadmeAnalysisDisplay({ data }: ReadmeAnalysisDisplayProps) {
       {/* Stats */}
       {data.statistics && (
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+          <div className="p-3 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
             <FileCode className="h-4 w-4 text-white/40 mx-auto mb-1" />
             <p className="text-lg font-bold">{data.statistics.total_lines || 0}</p>
             <p className="text-xs text-white/40">Lines</p>
           </div>
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+          <div className="p-3 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
             <Code className="h-4 w-4 text-white/40 mx-auto mb-1" />
             <p className="text-lg font-bold">{data.statistics.code_blocks || 0}</p>
             <p className="text-xs text-white/40">Code Blocks</p>
           </div>
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+          <div className="p-3 rounded-none bg-white/[0.02] border border-white/[0.06] text-center">
             <LinkIcon className="h-4 w-4 text-white/40 mx-auto mb-1" />
             <p className="text-lg font-bold">{data.statistics.links?.total_links || 0}</p>
             <p className="text-xs text-white/40">Links</p>
@@ -99,7 +99,7 @@ export function ReadmeAnalysisDisplay({ data }: ReadmeAnalysisDisplayProps) {
           <h4 className="font-medium text-sm mb-3 text-white/70">Improvement Suggestions</h4>
           <div className="space-y-2">
             {data.suggestions.slice(0, 5).map((suggestion, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-3">
+              <div key={idx} className="p-3 rounded-none bg-white/[0.02] border border-white/[0.06] flex items-start gap-3">
                 <Badge className={`text-xs shrink-0 ${getPriorityColor(suggestion.priority)}`}>
                   {suggestion.priority}
                 </Badge>

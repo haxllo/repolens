@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils'
 const BlueprintNode = ({ data }: NodeProps<IBlueprintNode>) => {
   return (
     <div className={cn(
-      "px-4 py-3 rounded-xl border bg-black/80 backdrop-blur-xl shadow-2xl min-w-[180px] transition-all group hover:scale-105",
+      "px-4 py-3 rounded-none border bg-black/80 backdrop-blur-xl shadow-2xl min-w-[180px] transition-all group hover:scale-105",
       data.group === 'root' ? "border-lime-400/50 shadow-[0_0_20px_rgba(162,228,53,0.1)]" : "border-white/10 hover:border-white/20"
     )}>
       <Handle type="target" position={Position.Left} className="w-2 h-2 !bg-white/20 border-none" />
@@ -45,7 +45,7 @@ const BlueprintNode = ({ data }: NodeProps<IBlueprintNode>) => {
           {data.name}
         </h4>
         <div className="mt-2 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.color }} />
+          <div className="w-1.5 h-1.5 rounded-none" style={{ backgroundColor: data.color }} />
           <span className="text-[10px] text-white/30 font-mono truncate opacity-0 group-hover:opacity-100 transition-opacity">
             {data.id}
           </span>
@@ -151,15 +151,15 @@ function BlueprintFlow({ data }: BlueprintGraphProps) {
           <h3 className="text-xs font-bold uppercase tracking-widest text-lime-400 mb-3">Blueprint Legend</h3>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-lime-400" />
+              <div className="w-2 h-2 rounded-none bg-lime-400" />
               <span className="text-[10px] text-white/60">ENTRY POINTS (LEFT)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <div className="w-2 h-2 rounded-none bg-blue-500" />
               <span className="text-[10px] text-white/60">BUSINESS LOGIC (MIDDLE)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <div className="w-2 h-2 rounded-none bg-purple-500" />
               <span className="text-[10px] text-white/60">UTILITIES / EXTERNAL (RIGHT)</span>
             </div>
           </div>

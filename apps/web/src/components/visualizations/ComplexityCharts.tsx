@@ -92,7 +92,7 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-2xl">
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-none shadow-2xl">
           <p className="font-bold text-white text-xs mb-1">{label || payload[0].name}</p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].fill || payload[0].color }} />
@@ -195,7 +195,7 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-2xl">
+                      <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-none shadow-2xl">
                         <p className="font-bold text-white text-[10px] mb-1">{payload[0].payload.path}</p>
                         <p className="text-red-400 text-xs font-bold">Complexity: {payload[0].value}</p>
                       </div>
