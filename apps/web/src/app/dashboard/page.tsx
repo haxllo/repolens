@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import ScanForm from '@/components/dashboard/ScanForm'
 import ScanList from '@/components/dashboard/ScanList'
-import { Activity, Database, Server, Cpu, Box, Shield, Zap, Globe } from 'lucide-react'
+import { Activity, Database, Server, Cpu, Box, Shield, Zap, Globe, Layers } from 'lucide-react'
 import { HUDCard } from '@/components/ui/HUDCard'
 
 export default async function DashboardPage() {
