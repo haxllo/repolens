@@ -275,9 +275,19 @@ export default function DependencyGraph3D({ data, onNodeClick }: DependencyGraph
   return (
     <div className="w-full h-full relative group">
       <Canvas 
-        shadows 
+        shadows={false} 
         camera={{ position: [0, 0, 30], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: false, 
+          alpha: true,
+          powerPreference: "high-performance" 
+        }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('REPOLENS_GRAPH: WebGL Context Lost. Attempting recovery...');
+          }, false);
+        }}
       >
         <Suspense fallback={null}>
           <GraphScene data={data} onNodeClick={onNodeClick} />

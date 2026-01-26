@@ -41,7 +41,21 @@ function AnimatedSphere() {
 export default function Hero3D() {
   return (
     <div className="absolute inset-0 z-0">
-      <Canvas camera={{ position: [0, 0, 5] }}>
+      <Canvas 
+        camera={{ position: [0, 0, 5] }}
+        gl={{ 
+          powerPreference: "low-power",
+          antialias: false,
+          stencil: false,
+          depth: true
+        }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('REPOLENS_SYSTEM: WebGL Context Lost. Throttling rendering.');
+          }, false);
+        }}
+      >
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={0.5} color="#ffffff" />
         <pointLight position={[-10, -10, -10]} intensity={0.2} color="#ffffff" />

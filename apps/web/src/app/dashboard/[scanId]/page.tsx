@@ -87,7 +87,7 @@ export default function ScanDetailPage() {
         await apiClient.delete(`/favorites/${scan.repositoryId}`)
         toast.success('Record removed from vault.')
       } else {
-        await apiClient.post('/favorites', { repositoryId: scan.repositoryId })
+        await apiClient.post(`/favorites/${scan.repositoryId}`, {})
         toast.success('Record verified and vaulted.')
       }
       setIsBookmarked(!isBookmarked)

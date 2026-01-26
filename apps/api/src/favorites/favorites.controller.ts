@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Query,
+  Body,
 } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { Public } from '../auth/public.decorator';
@@ -17,6 +18,15 @@ export class FavoritesController {
   @Get()
   async listFavorites(@Query('userId') userId?: string) {
     return this.favoritesService.listFavorites(userId || 'guest');
+  }
+
+  @Public()
+  @Post()
+  async addFavoriteWithBody(
+    @Query('userId') userId: string,
+    @Body('repositoryId') repositoryId: string
+  ) {
+    return this.favoritesService.addFavorite(userId || 'guest', repositoryId);
   }
 
   @Public()
