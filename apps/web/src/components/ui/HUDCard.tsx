@@ -2,9 +2,10 @@
 
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+import { motion, HTMLMotionProps } from 'framer-motion'
 
-interface HUDCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface HUDCardProps extends Omit<HTMLMotionProps<"div">, "children"> {
+  children?: React.ReactNode
   title?: string
   action?: React.ReactNode
   noPadding?: boolean

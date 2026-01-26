@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Loader2, AlertCircle, Clock3, ExternalLink, ShieldCheck, ChevronRight, Terminal, Search, Filter, Database, Code } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, Clock3, ExternalLink, ShieldCheck, ChevronRight, Terminal, Search, Filter, Database, Code, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HUDCard } from '@/components/ui/HUDCard'
 import { motion, AnimatePresence } from 'framer-motion'
