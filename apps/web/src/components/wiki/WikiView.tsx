@@ -99,19 +99,42 @@ const WikiComponents = () => ({
   code: ({ inline, className, children, ...props }: any) => {
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
+    const isCommand = ['bash', 'sh', 'shell', 'zsh', 'powershell', 'cmd'].includes(language.toLowerCase());
+
     if (language === 'mermaid') return <MermaidBlock chart={String(children).replace(/\n$/, '')} />;
     
-    return !inline ? (
-      <div className="my-6 rounded-none border border-white/5 bg-black/40 p-6 overflow-x-auto shadow-inner relative">
-        <div className="absolute top-0 right-0 p-2 font-mono text-[8px] text-white/10 uppercase tracking-[0.3em] pointer-events-none">
-          {language || 'code_segment'}
+    if (!inline) {
+      return (
+        <div className={cn(
+          "my-6 rounded-none border overflow-x-auto relative group",
+          isCommand 
+            ? "bg-[#0a0a0a] border-lime-400/20 p-6 shadow-[0_0_30px_rgba(162,228,53,0.05)]" 
+            : "bg-white/[0.02] border-white/5 p-4"
+        )}>
+          <div className="absolute top-0 right-0 p-2 font-mono text-[7px] text-white/10 uppercase tracking-[0.4em] pointer-events-none group-hover:text-white/20 transition-colors">
+            {isCommand ? 'TERMINAL_EXEC' : (language || 'DATA_SEGMENT')}
+          </div>
+          {isCommand && (
+            <div className="flex gap-1.5 mb-4 opacity-30 group-hover:opacity-50 transition-opacity">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+            </div>
+          )}
+          <code className={cn(
+            "font-mono text-[11px] leading-relaxed block",
+            isCommand ? "text-lime-400/90" : "text-white/50",
+            className
+          )} {...props}>
+            {children}
+          </code>
         </div>
-        <code className={cn("font-mono text-[11px] leading-relaxed text-lime-400/70 block", className)} {...props}>
-          {children}
-        </code>
-      </div>
-    ) : (
-      <code className="rounded-none bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-lime-300/80 border border-white/5" {...props}>
+      );
+    }
+
+    // Inline "technical" style - muted pill
+    return (
+      <code className="bg-white/[0.07] px-1.5 py-0.5 font-mono text-[10px] text-white/70 rounded-sm border border-white/5 mx-0.5" {...props}>
         {children}
       </code>
     )
