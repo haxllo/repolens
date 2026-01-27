@@ -58,16 +58,17 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
 
         // Handle potentially flattened graphs (replace common patterns with newlines if needed)
         // If it's a long string without newlines but with nodes or separators like -->
-        if (!cleanChart.includes('\n') && cleanChart.length > 40) {
-            // Split by common node patterns followed by a node ID or separator
-            // Look for patterns like: ) B, ] B, } B, or even ; B
+        if (!cleanChart.includes('\n') && cleanChart.length > 30) {
+            // Aggressively split by common node/edge patterns
+            // Split at semicolons
+            cleanChart = cleanChart.replace(/;/g, ';\n');
+            // Split after closing brackets/braces followed by whitespace and a potential new node
             cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9])/g, '$1\n$2');
-            cleanChart = cleanChart.replace(/;\s+([A-Z0-9])/g, ';\n$1');
+            // Split before arrows if the line is very long
+            cleanChart = cleanChart.replace(/(\s+-->\s+|\s+==>\s+|\s+--\s+)/g, '\n$1');
             
-            // If still no newlines, try a more aggressive split on common arrow patterns
-            if (!cleanChart.includes('\n')) {
-                cleanChart = cleanChart.replace(/(\s+-->\s+|;)/g, '$1\n');
-            }
+            // Final cleanup: remove double newlines
+            cleanChart = cleanChart.replace(/\n\n+/g, '\n');
         }
 
         const { svg } = await mermaid.render(id, cleanChart);

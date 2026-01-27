@@ -167,6 +167,33 @@ export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
   const [activeChapter, setActiveView] = useState(initialChapter)
   const chapters = data.chapters || []
   
+  // Pre-process markdown to fix common AI generation errors (missing newlines, broken tables)
+  const preprocessMarkdown = (content: string) => {
+    if (!content) return ''
+    
+    let processed = content
+    
+    // 1. Fix tables: Ensure there's a newline before and after tables, and fix double pipes
+    // Find lines that look like table headers and ensure they have a newline before
+    processed = processed.replace(/([^\n])\n\|/g, '$1\n\n|')
+    
+    // Fix common AI "double pipe" mistake in tables
+    processed = processed.replace(/\| \|/g, '|')
+    
+    // 2. Fix Mermaid: Ensure keywords start on new lines if they look like they should be blocks
+    const mermaidKeywords = ['graph TD', 'graph LR', 'flowchart TD', 'flowchart LR', 'sequenceDiagram', 'classDiagram']
+    mermaidKeywords.forEach(keyword => {
+      const regex = new RegExp(`([^\\n])(${keyword})`, 'g')
+      processed = processed.replace(regex, '$1\n\n$2')
+    })
+
+    // 3. Fix list items that might be squashed
+    processed = processed.replace(/([^\n])\n\*/g, '$1\n\n*')
+    processed = processed.replace(/([^\n])\n-/g, '$1\n\n-')
+
+    return processed
+  }
+
   if (chapters.length === 0) return null;
 
   return (
@@ -264,7 +291,7 @@ export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
                     remarkPlugins={[remarkGfm]}
                     components={WikiComponents() as any}
                   >
-                    {chapters[activeChapter].content}
+                    {preprocessMarkdown(chapters[activeChapter].content)}
                   </ReactMarkdown>
                 </div>
               </motion.div>
