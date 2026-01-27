@@ -174,6 +174,10 @@ export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
     let processed = content
     
     // 1. Fix Tables: AI often squashes them or misses the required empty line before
+    // Pre-pass: Detect 'squashed' tables where header and separator are on one line
+    // Pattern: | Header | | --- |
+    processed = processed.replace(/(\|[^|\n]+\|)\s*(\|[\s-]+\|)/g, '$1\n$2')
+
     const lines = processed.split('\n')
     const fixedLines = []
     for (let i = 0; i < lines.length; i++) {
