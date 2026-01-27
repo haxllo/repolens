@@ -16,6 +16,7 @@
     "postinstall": "turbo run db:generate"
   },
   "devDependencies": {
+    "@types/pg": "^8.16.0",
     "prettier": "^3.8.1",
     "prisma": "^7.3.0",
     "turbo": "^2.7.6",
@@ -27,6 +28,7 @@
   },
   "packageManager": "pnpm@9.1.0",
   "dependencies": {
-    "@prisma/client": "^7.3.0"
+    "@prisma/client": "^7.3.0",
+    "pg": "^8.17.2"
   }
 }

@@ -1,13 +1,19 @@
 import type { Metadata } from 'next'
-import { Instrument_Sans } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { Toaster } from '@/components/ui/sonner'
 
-const instrumentSans = Instrument_Sans({ 
+const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-instrument',
+  variable: '--font-inter',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
 })
 
 export const metadata: Metadata = {
@@ -29,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${instrumentSans.variable} font-sans bg-black antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans bg-black antialiased selection:bg-primary selection:text-white`}>
         <Providers>
           {children}
           <Toaster 

@@ -3,24 +3,21 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'motion/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
 import OverviewTab from '@/components/scan/OverviewTab'
 import { SymbolArchive } from '@/components/dashboard/SymbolArchive'
 import { 
-  ArrowLeft, 
   GitBranch, 
-  CheckCircle2, 
   Loader2, 
   AlertCircle, 
   Clock3,
   BookOpen,
   ChevronRight,
-  Maximize2,
   Box,
   Bookmark,
-  Hash
+  Hash,
+  Activity,
+  ShieldCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
@@ -55,17 +52,16 @@ export default function ScanDetailPage() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/scan/${scanId}`
       )
-      if (!response.ok) throw new Error('System query failed')
+      if (!response.ok) throw new Error('Query_Failure: Connection_Terminated')
       const data = await response.json()
       setScan(data)
       setError('')
       
-      // Check if already bookmarked
       if (data.repositoryId) {
         checkBookmarkStatus(data.repositoryId)
       }
     } catch (err: any) {
-      setError(err.message || 'Connection interrupted')
+      setError(err.message || 'Error: Archive_Sync_Interrupted')
     } finally {
       setLoading(false)
     }
@@ -76,7 +72,7 @@ export default function ScanDetailPage() {
       const favorites = await apiClient.get<any[]>('/favorites')
       setIsBookmarked(favorites.some(f => f.repositoryId === repoId))
     } catch (e) {
-      console.error('Status check failed')
+      // Quiet fail
     }
   }
 
@@ -85,14 +81,14 @@ export default function ScanDetailPage() {
     try {
       if (isBookmarked) {
         await apiClient.delete(`/favorites/${scan.repositoryId}`)
-        toast.success('Record removed from vault.')
+        toast.info('VAULT_RECORD_PURGED')
       } else {
         await apiClient.post(`/favorites/${scan.repositoryId}`, {})
-        toast.success('Record verified and vaulted.')
+        toast.success('VAULT_RECORD_SECURED')
       }
       setIsBookmarked(!isBookmarked)
     } catch (e) {
-      toast.error('Vault protocol failed.')
+      toast.error('VAULT_PROTOCOL_FAILURE')
     }
   }
 
@@ -106,14 +102,6 @@ export default function ScanDetailPage() {
     return () => clearInterval(interval)
   }, [scanId, scan?.status])
 
-  const getStatusIcon = (status: string) => {
-    const s = status?.toLowerCase() || ''
-    if (s === 'completed') return <CheckCircle2 className="h-4 w-4 text-lime-400" />
-    if (s === 'processing' || s === 'queued') return <Loader2 className="h-4 w-4 text-white/40 animate-spin" />
-    if (s === 'failed') return <AlertCircle className="h-4 w-4 text-red-500" />
-    return <Clock3 className="h-4 w-4 text-white/20" />
-  }
-
   const getRepoName = (url: string) => {
     try {
       return url.replace('https://github.com/', '')
@@ -123,17 +111,17 @@ export default function ScanDetailPage() {
   }
 
   if (loading) return (
-    <div className="space-y-12">
-      <div className="h-8 w-48 bg-white/5 animate-pulse" />
-      <div className="h-64 bg-white/5 animate-pulse border border-white/5" />
+    <div className="flex flex-col items-center justify-center h-96 gap-4">
+      <Activity className="w-6 h-6 animate-pulse text-primary" />
+      <span className="font-mono text-[10px] uppercase tracking-widest animate-pulse">Retrieving_Archive_Segment...</span>
     </div>
   )
 
   if (error || !scan) return (
-    <div className="py-24 text-center">
-      <AlertCircle className="w-12 h-12 text-red-500/20 mx-auto mb-6" />
-      <h2 className="text-xl font-black uppercase tracking-widest text-white mb-4">Archive Not Found</h2>
-      <Link href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.3em] text-lime-400">Return to Console</Link>
+    <div className="py-24 max-w-2xl mx-auto border border-dashed border-white/10 p-12 text-center">
+      <AlertCircle className="w-8 h-8 text-primary mx-auto mb-6" />
+      <h2 className="font-mono text-xs uppercase tracking-[0.3em] text-foreground mb-4">{error || 'ARCHIVE_SEGMENT_MISSING'}</h2>
+      <Link href="/dashboard" className="font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground hover:text-primary transition-colors">Return_to_Console_Root [←]</Link>
     </div>
   )
 
@@ -142,130 +130,145 @@ export default function ScanDetailPage() {
   const isFailed = scan.status === 'failed'
 
   return (
-    <div className="space-y-12 max-w-6xl mx-auto">
-      {/* Header Info */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-white/5 pb-12">
+    <div className="space-y-12 pb-24">
+      {/* PANE_HEADER: ARCHIVE_METADATA */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-white/10 pb-12">
         <div className="space-y-4">
-          <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Console</Link>
+          <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.4em] text-muted-foreground">
+            <Link href="/dashboard" className="hover:text-foreground">Console</Link>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-white/40">Archive Details</span>
+            <span>Archive_{scan.scanId.slice(0, 8)}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-white leading-none">
-            {getRepoName(scan.repoUrl).split('/').pop()}
+          <h1 className="text-4xl font-light tracking-tighter leading-none">
+            {getRepoName(scan.repoUrl)}
           </h1>
-          <div className="flex items-center gap-6 text-[10px] font-mono uppercase tracking-widest text-white/30">
+          <div className="flex items-center gap-8 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             <div className="flex items-center gap-2">
               <GitBranch className="h-3 w-3" />
-              {scan.branch}
+              <span>REF: {scan.branch}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-white/10">IDX:</span>
-              {scan.scanId.slice(0, 12)}
+              <ShieldCheck className="h-3 w-3" />
+              <span>VERIFIED: {new Date(scan.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col md:items-end gap-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
                 {isCompleted && (
                     <button 
                         onClick={toggleBookmark}
                         className={cn(
-                            "p-3 border transition-all",
+                            "h-10 w-10 flex items-center justify-center border transition-all",
                             isBookmarked 
-                                ? "bg-lime-400 border-lime-400 text-black" 
-                                : "bg-black border-white/10 text-white/20 hover:text-white"
+                                ? "bg-primary border-primary text-white" 
+                                : "bg-black border-white/10 text-muted-foreground hover:text-foreground"
                         )}
-                        title={isBookmarked ? "Erase from Vault" : "Vault Record"}
                     >
                         <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
                     </button>
                 )}
                 {isCompleted && (
-                    <div className="flex bg-black border border-white/10 p-1">
-                        <button 
-                            onClick={() => setActiveView('archive')}
-                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'archive' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
-                        >
-                            <BookOpen className="w-3 h-3" />
-                            Archive View
-                        </button>
-                        <button 
-                            onClick={() => setActiveView('spatial')}
-                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'spatial' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
-                        >
-                            <Box className="w-3 h-3" />
-                            Spatial Map
-                        </button>
-                        <button 
-                            onClick={() => setActiveView('symbols')}
-                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeView === 'symbols' ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}
-                        >
-                            <Hash className="w-3 h-3" />
-                            Symbol Registry
-                        </button>
+                    <div className="flex h-10 border border-white/10 bg-black p-0.5">
+                        <ViewToggle 
+                          active={activeView === 'archive'} 
+                          onClick={() => setActiveView('archive')}
+                          icon={BookOpen}
+                          label="ARCHIVE"
+                        />
+                        <ViewToggle 
+                          active={activeView === 'spatial'} 
+                          onClick={() => setActiveView('spatial')}
+                          icon={Box}
+                          label="SPATIAL"
+                        />
+                        <ViewToggle 
+                          active={activeView === 'symbols'} 
+                          onClick={() => setActiveView('symbols')}
+                          icon={Hash}
+                          label="SYMBOLS"
+                        />
                     </div>
                 )}
             </div>
-            <div className={`flex items-center gap-3 px-6 py-3 border border-white/10 bg-black`}>
-                {getStatusIcon(scan.status)}
-                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+            <div className="h-10 flex items-center gap-3 px-6 border border-white/10 bg-white/[0.02]">
+                <StatusIcon status={scan.status} />
+                <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
                     {scan.status}
                 </span>
             </div>
         </div>
       </div>
 
-      {/* Processing State */}
-      {isProcessing && (
-        <div className="py-32 border border-white/5 bg-black flex flex-col items-center justify-center text-center space-y-8">
-          <div className="relative">
-             <Loader2 className="w-12 h-12 text-lime-400 animate-spin" />
-             <div className="absolute inset-0 blur-xl bg-lime-400/20 animate-pulse" />
+      {/* EXECUTION_PANE: OUTPUT_CONTENT */}
+      <div className="min-h-[400px]">
+        {isProcessing && (
+          <div className="py-48 flex flex-col items-center justify-center text-center space-y-12">
+            <Activity className="w-8 h-8 text-primary animate-pulse" />
+            <div className="space-y-4">
+              <h2 className="font-mono text-xs uppercase tracking-[0.4em]">Processing_Data_Stream</h2>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Synthesizing architectural knowledge graph...</p>
+            </div>
+            <div className="w-96 h-1 bg-white/5 relative overflow-hidden">
+               <div 
+                  className="absolute inset-y-0 left-0 bg-primary transition-all duration-500"
+                  style={{ width: `${scan.progress || 30}%` }}
+               />
+            </div>
           </div>
-          <div className="space-y-3">
-            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-white">Neural Indexing</h2>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">Parsing architectural constructs...</p>
-          </div>
-          <div className="w-64 h-px bg-white/5 relative">
-             <motion.div 
-                className="absolute inset-y-0 left-0 bg-lime-400 shadow-[0_0_10px_rgba(162,228,53,0.5)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${scan.progress || 30}%` }}
-             />
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Failed State */}
-      {isFailed && (
-        <div className="p-12 border border-red-500/20 bg-black space-y-6">
-          <div className="flex items-center gap-4 text-red-500">
-            <AlertCircle className="w-6 h-6" />
-            <span className="text-sm font-black uppercase tracking-[0.3em]">Protocol Aborted</span>
+        {isFailed && (
+          <div className="p-12 border border-primary/20 bg-black space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <AlertCircle className="w-6 h-6" />
+              <span className="font-mono text-xs uppercase tracking-[0.4em]">Protocol_Interrupted</span>
+            </div>
+            <div className="font-mono text-[10px] text-primary/60 leading-relaxed uppercase tracking-widest bg-primary/5 p-8 border border-primary/10">
+              STDOUT // ERROR_REPORT: {scan.error || 'Unknown system validation failure'}
+            </div>
+            <Link href="/dashboard" className="inline-block font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground underline underline-offset-8">
+              INITIALIZE_NEW_SEQUENCE
+            </Link>
           </div>
-          <p className="font-mono text-xs text-red-400/60 leading-relaxed uppercase tracking-widest bg-red-500/5 p-6 border border-red-500/10">
-            ERROR_LOG: {scan.error || 'System validation failed'}
-          </p>
-          <Link href="/dashboard" className="inline-block text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors">
-            Re-initialize Process
-          </Link>
-        </div>
-      )}
+        )}
 
-      {/* Completed Content */}
-      {isCompleted && scan.results && (
-        <div className="animate-in fade-in duration-1000">
-           {activeView === 'archive' ? (
-               <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
-           ) : activeView === 'symbols' ? (
-               <SymbolArchive data={scan.results} />
-           ) : (
-               <BlueprintCanvas data={scan.results} />
-           )}
-        </div>
-      )}
+        {isCompleted && scan.results && (
+          <div className="space-y-12">
+             {activeView === 'archive' ? (
+                 <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
+             ) : activeView === 'symbols' ? (
+                 <SymbolArchive data={scan.results} />
+             ) : (
+                 <BlueprintCanvas data={scan.results} />
+             )}
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+function ViewToggle({ active, onClick, icon: Icon, label }: any) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "px-4 flex items-center gap-3 font-mono text-[9px] uppercase tracking-widest transition-colors",
+        active ? "bg-white text-black" : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      <Icon className="w-3 h-3" />
+      {label}
+    </button>
+  )
+}
+
+function StatusIcon({ status }: { status: string }) {
+  const s = status?.toLowerCase() || ''
+  if (s === 'completed') return <div className="w-2 h-2 bg-foreground" />
+  if (s === 'processing' || s === 'queued') return <div className="w-2 h-2 bg-primary animate-pulse" />
+  if (s === 'failed') return <AlertCircle className="h-3 w-3 text-primary" />
+  return <div className="w-2 h-2 bg-muted-foreground" />
 }

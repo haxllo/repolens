@@ -1,5 +1,4 @@
 import type { ScanRequest, ScanResponse, ScanResult } from '@repolens/shared'
-import { authClient } from '@/lib/auth-client'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -10,84 +9,39 @@ export class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  private async getAuthToken(): Promise<string | null> {
-    // Get token from session if available
-    if (typeof window !== 'undefined') {
-      const session = await authClient.getSession();
-      return session.data?.session.token || null;
-    }
-    return null
-  }
-
-  private async fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-    const token = await this.getAuthToken()
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...options.headers as Record<string, string>,
-    }
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-    
-    return fetch(url, {
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path.startsWith('/') ? path : `/api${path}`}`, {
       ...options,
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
     })
-  }
 
-  private async getUserId(): Promise<string> {
-    if (typeof window !== 'undefined') {
-      const session = await authClient.getSession();
-      return session.data?.user.id || 'guest';
+    if (!response.ok) {
+      throw new Error(`API Request Failed: ${response.statusText} (${response.status})`)
     }
-    return 'guest';
-  }
 
-  private addUserIdToPath(path: string, userId: string): string {
-    const separator = path.includes('?') ? '&' : '?'
-    return `${path}${separator}userId=${userId}`
+    if (response.status === 204) {
+      return {} as T
+    }
+
+    return response.json()
   }
 
   async get<T>(path: string): Promise<T> {
-    const userId = await this.getUserId()
-    const finalPath = this.addUserIdToPath(path, userId)
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`)
-    
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`)
-    }
-    
-    return response.json()
+    return this.request<T>(path, { method: 'GET' })
   }
 
   async post<T>(path: string, data: any): Promise<T> {
-    const userId = await this.getUserId()
-    const finalPath = this.addUserIdToPath(path, userId)
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`, {
+    return this.request<T>(path, {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`)
-    }
-    
-    return response.json()
   }
 
   async delete<T>(path: string): Promise<T> {
-    const userId = await this.getUserId()
-    const finalPath = this.addUserIdToPath(path, userId)
-    const response = await this.fetchWithAuth(`${this.baseUrl}/api${finalPath}`, {
-      method: 'DELETE',
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`)
-    }
-    
-    return response.json()
+    return this.request<T>(path, { method: 'DELETE' })
   }
 
   async createScan(data: ScanRequest): Promise<ScanResponse> {
@@ -95,7 +49,7 @@ export class ApiClient {
   }
 
   async getScanStatus(scanId: string): Promise<any> {
-    return this.get(`/scan/${scanId}`)
+    return this.get<any>(`/scan/${scanId}`)
   }
 
   async getScanResults(scanId: string): Promise<ScanResult> {
@@ -103,7 +57,7 @@ export class ApiClient {
   }
 
   async healthCheck(): Promise<any> {
-    return this.get('/health')
+    return this.get<any>('/health')
   }
 }
 
