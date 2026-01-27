@@ -100,10 +100,12 @@ const WikiComponents = () => ({
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
     const isCommand = ['bash', 'sh', 'shell', 'zsh', 'powershell', 'cmd'].includes(language.toLowerCase());
+    const content = String(children).replace(/\n$/, '');
+    const isShort = !content.includes('\n') && content.length < 100;
 
-    if (language === 'mermaid') return <MermaidBlock chart={String(children).replace(/\n$/, '')} />;
+    if (language === 'mermaid') return <MermaidBlock chart={content} />;
     
-    if (!inline) {
+    if (!inline && !isShort) {
       return (
         <div className={cn(
           "my-6 rounded-none border overflow-x-auto relative group",
@@ -111,15 +113,17 @@ const WikiComponents = () => ({
             ? "bg-[#0a0a0a] border-lime-400/20 p-6 shadow-[0_0_30px_rgba(162,228,53,0.05)]" 
             : "bg-white/[0.02] border-white/5 p-4"
         )}>
-          <div className="absolute top-0 right-0 p-2 font-mono text-[7px] text-white/10 uppercase tracking-[0.4em] pointer-events-none group-hover:text-white/20 transition-colors">
-            {isCommand ? 'TERMINAL_EXEC' : (language || 'DATA_SEGMENT')}
-          </div>
           {isCommand && (
-            <div className="flex gap-1.5 mb-4 opacity-30 group-hover:opacity-50 transition-opacity">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
-            </div>
+            <>
+              <div className="absolute top-0 right-0 p-2 font-mono text-[7px] text-white/10 uppercase tracking-[0.4em] pointer-events-none group-hover:text-white/20 transition-colors">
+                TERMINAL_EXEC
+              </div>
+              <div className="flex gap-1.5 mb-4 opacity-30 group-hover:opacity-50 transition-opacity">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+                <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+              </div>
+            </>
           )}
           <code className={cn(
             "font-mono text-[11px] leading-relaxed block",
@@ -134,7 +138,7 @@ const WikiComponents = () => ({
 
     // Inline "technical" style - muted pill
     return (
-      <code className="bg-white/[0.07] px-1.5 py-0.5 font-mono text-[10px] text-white/70 rounded-sm border border-white/5 mx-0.5" {...props}>
+      <code className="bg-white/[0.07] px-1.5 py-0.5 font-mono text-[10px] text-white/70 rounded-sm border border-white/5 mx-0.5 whitespace-nowrap" {...props}>
         {children}
       </code>
     )
