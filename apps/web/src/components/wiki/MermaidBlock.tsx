@@ -23,12 +23,16 @@ mermaid.initialize({
     edgeLabelBackground: '#000000',
     defaultLinkColor: '#ffffff',
     titleColor: '#a3e635',
-    fontFamily: 'ui-monospace'
+    fontFamily: 'ui-monospace',
+    fontSize: '14px',
   },
   flowchart: {
     htmlLabels: true,
-    curve: 'stepBefore', // Sharp orthogonal lines for schematic look
-    useMaxWidth: true,
+    curve: 'stepBefore',
+    useMaxWidth: false, // Allow it to expand
+    padding: 20,
+    nodeSpacing: 80,
+    rankSpacing: 100,
   }
 });
 
@@ -142,7 +146,8 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
                 </pre>
             ) : (
                 <div 
-                    className="w-full flex justify-center z-10 transition-opacity duration-1000"
+                    className="w-full flex justify-center z-10 transition-opacity duration-1000 overflow-visible"
+                    style={{ minWidth: '800px', transform: 'scale(1.1)' }}
                     dangerouslySetInnerHTML={{ __html: svg }}
                 />
             )}
