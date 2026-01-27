@@ -173,23 +173,38 @@ export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
     
     let processed = content
     
-    // 1. Fix tables: Ensure there's a newline before and after tables, and fix double pipes
-    // Find lines that look like table headers and ensure they have a newline before
-    processed = processed.replace(/([^\n])\n\|/g, '$1\n\n|')
+    // 1. Fix Tables: AI often squashes them or misses the required empty line before
+    // Ensure any line starting with | has an empty line above it if the above line doesn't start with |
+    const lines = processed.split('\n')
+    const fixedLines = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line.startsWith('|') && i > 0 && !lines[i-1].trim().startsWith('|') && lines[i-1].trim() !== '') {
+        fixedLines.push('')
+      }
+      
+      // Fix common AI "double pipe" mistake in tables
+      let cleanedLine = lines[i].replace(/\| +\|/g, '|')
+      
+      // Fix missing spaces in table separators |---| -> | --- |
+      if (cleanedLine.match(/\|-+\|/)) {
+        cleanedLine = cleanedLine.replace(/\|(-+)\|/g, '| $1 |')
+      }
+      
+      fixedLines.push(cleanedLine)
+    }
+    processed = fixedLines.join('\n')
     
-    // Fix common AI "double pipe" mistake in tables
-    processed = processed.replace(/\| \|/g, '|')
-    
-    // 2. Fix Mermaid: Ensure keywords start on new lines if they look like they should be blocks
+    // 2. Fix Mermaid: Aggressively handle the 'one-liner' graphs that AI produces
     const mermaidKeywords = ['graph TD', 'graph LR', 'flowchart TD', 'flowchart LR', 'sequenceDiagram', 'classDiagram']
     mermaidKeywords.forEach(keyword => {
-      const regex = new RegExp(`([^\\n])(${keyword})`, 'g')
+      // Ensure double newline before mermaid blocks
+      const regex = new RegExp(`([^\\n])\\s*(${keyword})`, 'g')
       processed = processed.replace(regex, '$1\n\n$2')
     })
 
     // 3. Fix list items that might be squashed
-    processed = processed.replace(/([^\n])\n\*/g, '$1\n\n*')
-    processed = processed.replace(/([^\n])\n-/g, '$1\n\n-')
+    processed = processed.replace(/([^\n])\n([\*\-]) /g, '$1\n\n$2 ')
 
     return processed
   }

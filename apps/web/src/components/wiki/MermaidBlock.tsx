@@ -59,15 +59,21 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
         // Handle potentially flattened graphs (replace common patterns with newlines if needed)
         // If it's a long string without newlines but with nodes or separators like -->
         if (!cleanChart.includes('\n') && cleanChart.length > 30) {
-            // Aggressively split by common node/edge patterns
-            // Split at semicolons
+            // 1. Initial split on semicolons
             cleanChart = cleanChart.replace(/;/g, ';\n');
-            // Split after closing brackets/braces followed by whitespace and a potential new node
-            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9])/g, '$1\n$2');
-            // Split before arrows if the line is very long
-            cleanChart = cleanChart.replace(/(\s+-->\s+|\s+==>\s+|\s+--\s+)/g, '\n$1');
             
-            // Final cleanup: remove double newlines
+            // 2. Split between nodes: Look for ] followed by a space and an identifier like A[
+            // Pattern: ] A[ or ) A[ or } A[
+            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
+            
+            // 3. Split before arrows if we have multiple arrows on one line
+            // Pattern: ... --> B[...] --> C
+            cleanChart = cleanChart.replace(/(\s+[-=]+>\s+)([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
+            
+            // 4. Split on explicit 'note' keywords
+            cleanChart = cleanChart.replace(/\s+(Note:)/g, '\n\n$1');
+            
+            // 5. Final cleanup: remove double newlines
             cleanChart = cleanChart.replace(/\n\n+/g, '\n');
         }
 
