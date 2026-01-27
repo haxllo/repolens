@@ -51,29 +51,39 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
         const id = `mermaid-svg-${Math.random().toString(36).substring(2, 11)}`;
         let cleanChart = chart.trim();
         
-        // Ensure valid graph start
-        if (!cleanChart.startsWith('graph') && !cleanChart.startsWith('flowchart') && !cleanChart.startsWith('sequenceDiagram') && !cleanChart.startsWith('classDiagram')) {
+        // 1. Ensure valid graph start and clean separation from first node
+        const headRegex = /^(graph|flowchart|sequenceDiagram|classDiagram)\s+(TD|LR|TB|BT|RD)?/i;
+        const match = cleanChart.match(headRegex);
+        
+        if (match) {
+            const header = match[0];
+            const remaining = cleanChart.slice(header.length).trim();
+            cleanChart = `${header}\n${remaining}`;
+        } else {
             cleanChart = `graph TD\n${cleanChart}`;
         }
 
-        // Handle potentially flattened graphs (replace common patterns with newlines if needed)
-        // If it's a long string without newlines but with nodes or separators like -->
-        if (!cleanChart.includes('\n') && cleanChart.length > 30) {
-            // 1. Initial split on semicolons
+        // 2. Handle potentially flattened graphs
+        if (cleanChart.length > 30) {
+            // Split at semicolons
             cleanChart = cleanChart.replace(/;/g, ';\n');
             
-            // 2. Split between nodes: Look for ] followed by a space and an identifier like A[
-            // Pattern: ] A[ or ) A[ or } A[
+            // Split between nodes: Look for end-brackets followed by a new node identifier
+            // Example: ] B( or ) B{ or } B[
             cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
             
-            // 3. Split before arrows if we have multiple arrows on one line
-            // Pattern: ... --> B[...] --> C
+            // Split before arrows if we have multiple arrows on one line
+            // Example: ... --> B[...] --> C
             cleanChart = cleanChart.replace(/(\s+[-=]+>\s+)([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
             
-            // 4. Split on explicit 'note' keywords
-            cleanChart = cleanChart.replace(/\s+(Note:)/g, '\n\n$1');
+            // SPECIAL FIX: Split when a closing bracket is followed by a node ID without opening brackets
+            // Example: ...ts) B --> C
+            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9]+)\s+([-=]+>)/g, '$1\n$2 $3');
+
+            // Split on explicit 'Note:' or other trailing text
+            cleanChart = cleanChart.replace(/\s+(Note:)/gi, '\n\n$1');
             
-            // 5. Final cleanup: remove double newlines
+            // Final cleanup: remove double newlines
             cleanChart = cleanChart.replace(/\n\n+/g, '\n');
         }
 
