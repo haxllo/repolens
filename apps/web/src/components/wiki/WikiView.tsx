@@ -174,21 +174,22 @@ export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
     let processed = content
     
     // 1. Fix Tables: AI often squashes them or misses the required empty line before
-    // Ensure any line starting with | has an empty line above it if the above line doesn't start with |
     const lines = processed.split('\n')
     const fixedLines = []
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
+      
+      // Force empty line before table start
       if (line.startsWith('|') && i > 0 && !lines[i-1].trim().startsWith('|') && lines[i-1].trim() !== '') {
         fixedLines.push('')
       }
       
-      // Fix common AI "double pipe" mistake in tables
-      let cleanedLine = lines[i].replace(/\| +\|/g, '|')
+      // Fix common AI "double pipe" mistake in tables: | | --- | |
+      let cleanedLine = lines[i].replace(/\|\s+\|/g, '|')
       
       // Fix missing spaces in table separators |---| -> | --- |
-      if (cleanedLine.match(/\|-+\|/)) {
-        cleanedLine = cleanedLine.replace(/\|(-+)\|/g, '| $1 |')
+      if (cleanedLine.match(/^\|[-|\s]+\|$/)) {
+        cleanedLine = cleanedLine.replace(/-+/g, ' --- ')
       }
       
       fixedLines.push(cleanedLine)

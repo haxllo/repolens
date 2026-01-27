@@ -51,46 +51,46 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
         const id = `mermaid-svg-${Math.random().toString(36).substring(2, 11)}`;
         let cleanChart = chart.trim();
         
-        // 1. Ensure valid graph start and clean separation from first node
+        // 1. Strip trailing conversational junk (AI often leaks this into the block)
+        // Remove trailing commas, periods, and common phrases followed by nothing
+        cleanChart = cleanChart.replace(/[,.]\s*(tell me|here is|this shows).*$/gi, '');
+        // Remove trailing commas/periods that aren't part of a node label
+        if (cleanChart.endsWith(',') || cleanChart.endsWith('.')) {
+            cleanChart = cleanChart.slice(0, -1);
+        }
+
+        // 2. Ensure valid graph start and clean separation
         const headRegex = /^(graph|flowchart|sequenceDiagram|classDiagram)\s+(TD|LR|TB|BT|RD)?/i;
         const match = cleanChart.match(headRegex);
         
+        let header = "graph TD";
+        let body = cleanChart;
+
         if (match) {
-            const header = match[0];
-            const remaining = cleanChart.slice(header.length).trim();
-            cleanChart = `${header}\n${remaining}`;
-        } else {
-            cleanChart = `graph TD\n${cleanChart}`;
+            header = match[0];
+            body = cleanChart.slice(header.length).trim();
+        }
+        
+        // 3. Robust Body Tokenization (Handle one-liners)
+        // If it's a one-liner, split aggressively on arrows and semicolons
+        if (!body.includes('\n') && body.length > 20) {
+            // Split on arrows (--> , ==> , --)
+            body = body.replace(/(\s+[-=]+>\s+)/g, '\n$1');
+            // Split on nodes following a closing bracket
+            body = body.replace(/([\]\)\}])\s+([A-Z0-9])/g, '$1\n$2');
+            // Split on semicolons
+            body = body.replace(/;/g, ';\n');
         }
 
-        // 2. Handle potentially flattened graphs
-        if (cleanChart.length > 30) {
-            // Split at semicolons
-            cleanChart = cleanChart.replace(/;/g, ';\n');
-            
-            // Split between nodes: Look for end-brackets followed by a new node identifier
-            // Example: ] B( or ) B{ or } B[
-            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
-            
-            // Split before arrows if we have multiple arrows on one line
-            // Example: ... --> B[...] --> C
-            cleanChart = cleanChart.replace(/(\s+[-=]+>\s+)([A-Z0-9][^ \-\->]*[\[\(\{])/g, '$1\n$2');
-            
-            // SPECIAL FIX: Split when a closing bracket is followed by a node ID without opening brackets
-            // Example: ...ts) B --> C
-            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9]+)\s+([-=]+>)/g, '$1\n$2 $3');
+        cleanChart = `${header}\n${body}`;
 
-            // Split on explicit 'Note:' or other trailing text
-            cleanChart = cleanChart.replace(/\s+(Note:)/gi, '\n\n$1');
-            
-            // Final cleanup: remove double newlines
-            cleanChart = cleanChart.replace(/\n\n+/g, '\n');
-        }
+        // 4. Final safety check: remove double newlines and trim lines
+        cleanChart = cleanChart.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
 
         const { svg } = await mermaid.render(id, cleanChart);
         setSvg(svg);
       } catch (err) {
-        console.error('Mermaid Render Fail:', err);
+        console.error('Mermaid Render Fail. Input was:', chart);
         setError('Diagram Protocol Error');
       } finally {
         setIsRendering(false);
