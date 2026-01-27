@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import OverviewTab from '@/components/scan/OverviewTab'
 import { SymbolArchive } from '@/components/dashboard/SymbolArchive'
 import { 
   GitBranch, 
-  Loader2, 
   AlertCircle, 
-  Clock3,
   BookOpen,
   ChevronRight,
   Box,
@@ -19,6 +16,7 @@ import {
   Activity,
   ShieldCheck
 } from 'lucide-react'
+import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { BlueprintCanvas } from '@/components/blueprint/BlueprintCanvas'
 import { apiClient } from '@/lib/api-client'
@@ -47,8 +45,18 @@ export default function ScanDetailPage() {
   const [activeView, setActiveView] = useState<'archive' | 'spatial' | 'symbols'>('archive')
   const [isBookmarked, setIsBookmarked] = useState(false)
 
-  const fetchScanData = async () => {
+  const checkBookmarkStatus = useCallback(async (repoId: string) => {
     try {
+      const favorites = await apiClient.get<any[]>('/favorites')
+      setIsBookmarked(favorites.some(f => f.repositoryId === repoId))
+    } catch {
+      // Quiet fail
+    }
+  }, [])
+
+  const fetchScanData = useCallback(async () => {
+    try {
+      setLoading(true)
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/scan/${scanId}`
       )
@@ -65,16 +73,7 @@ export default function ScanDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const checkBookmarkStatus = async (repoId: string) => {
-    try {
-      const favorites = await apiClient.get<any[]>('/favorites')
-      setIsBookmarked(favorites.some(f => f.repositoryId === repoId))
-    } catch (e) {
-      // Quiet fail
-    }
-  }
+  }, [scanId, checkBookmarkStatus])
 
   const toggleBookmark = async () => {
     if (!scan?.repositoryId) return
@@ -87,7 +86,7 @@ export default function ScanDetailPage() {
         toast.success('VAULT_RECORD_SECURED')
       }
       setIsBookmarked(!isBookmarked)
-    } catch (e) {
+    } catch {
       toast.error('VAULT_PROTOCOL_FAILURE')
     }
   }
@@ -100,7 +99,7 @@ export default function ScanDetailPage() {
       }
     }, 3000)
     return () => clearInterval(interval)
-  }, [scanId, scan?.status])
+  }, [fetchScanData, scan?.status])
 
   const getRepoName = (url: string) => {
     try {
@@ -237,7 +236,7 @@ export default function ScanDetailPage() {
         {isCompleted && scan.results && (
           <div className="space-y-12">
              {activeView === 'archive' ? (
-                 <OverviewTab results={scan.results} repoUrl={scan.repoUrl} />
+                 <OverviewTab results={scan.results} />
              ) : activeView === 'symbols' ? (
                  <SymbolArchive data={scan.results} />
              ) : (

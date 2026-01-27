@@ -18,11 +18,11 @@ export default function HomePage() {
           <span className="font-mono text-[10px] uppercase tracking-[0.3em]">RepoLens // System_Online</span>
         </div>
         <nav className="flex items-center gap-8">
-          <Link href="/docs" className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">Documentation</Link>
+          <Link href="/docs" className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors inline-flex items-center">Documentation</Link>
           {!isPending && (
             <>
               {session ? (
-                <Link href="/dashboard">
+                <Link href="/dashboard" className="inline-flex items-center">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-primary hover:underline cursor-pointer">Enter_Console [→]</span>
                 </Link>
               ) : (

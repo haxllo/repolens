@@ -6,24 +6,18 @@ import {
   Activity,
   ShieldCheck,
   ChevronRight,
-  ArrowRight,
-  Zap,
-  BookOpen
+  ArrowRight
 } from 'lucide-react'
 import { useState } from 'react'
 import { WikiView } from '../wiki/WikiView'
-import { motion, AnimatePresence } from 'framer-motion'
 
 interface OverviewTabProps {
   results: any
-  repoUrl: string
 }
 
-export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
+export default function OverviewTab({ results }: OverviewTabProps) {
   const [view, setView] = useState<'index' | 'wiki'>('index')
-  const [initialChapter, setInitialChapter] = useState(0)
 
-  const languages = results?.languages || {}
   const explanations = results?.explanations || {}
   const riskScores = results?.riskScores || {}
   const dependencies = results?.dependencies || {}
@@ -39,7 +33,7 @@ export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
   if (view === 'wiki') {
     return (
       <div className="animate-in fade-in duration-700">
-        <WikiView data={{ ...explanations, chapters }} repoUrl={repoUrl} />
+        <WikiView data={{ ...explanations, chapters }} />
         <div className="mt-20 flex justify-center">
            <button 
             onClick={() => setView('index')}
@@ -95,7 +89,6 @@ export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
             <button
               key={idx}
               onClick={() => {
-                setInitialChapter(idx)
                 setView('wiki')
               }}
               className="group bg-black p-10 text-left hover:bg-white/[0.02] transition-all relative overflow-hidden"
@@ -129,7 +122,6 @@ export default function OverviewTab({ results, repoUrl }: OverviewTabProps) {
                 <p className="text-sm text-white/40 font-medium leading-relaxed">{path.description}</p>
                 <button 
                   onClick={() => {
-                    setInitialChapter(path.chapter_index)
                     setView('wiki')
                   }}
                   className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors"

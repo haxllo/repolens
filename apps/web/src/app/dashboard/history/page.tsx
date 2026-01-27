@@ -1,18 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth-client'
-import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Clock, 
   GitBranch, 
   CheckCircle2, 
   Loader2, 
-  History,
   ExternalLink,
   AlertCircle,
-  Clock3,
   Archive
 } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
@@ -47,11 +44,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  useEffect(() => {
-    fetchHistory()
-  }, [statusFilter])
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams({ limit: '50', offset: '0' })
@@ -60,12 +53,16 @@ export default function HistoryPage() {
       }
       const data = await apiClient.get<HistoryResponse>(`/history?${params}`)
       setHistory(data)
-    } catch (err) {
+    } catch {
       setError('Failed to load system records.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter])
+
+  useEffect(() => {
+    fetchHistory()
+  }, [fetchHistory])
 
   const getStatusIcon = (status: string) => {
     const s = status.toUpperCase()

@@ -33,7 +33,7 @@ export class ApiClient {
     return this.request<T>(path, { method: 'GET' })
   }
 
-  async post<T>(path: string, data: any): Promise<T> {
+  async post<T>(path: string, data: unknown): Promise<T> {
     return this.request<T>(path, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -48,16 +48,16 @@ export class ApiClient {
     return this.post<ScanResponse>('/scan', data)
   }
 
-  async getScanStatus(scanId: string): Promise<any> {
-    return this.get<any>(`/scan/${scanId}`)
+  async getScanStatus(scanId: string): Promise<unknown> {
+    return this.get<unknown>(`/scan/${scanId}`)
   }
 
   async getScanResults(scanId: string): Promise<ScanResult> {
     return this.get<ScanResult>(`/scan/${scanId}/results`)
   }
 
-  async healthCheck(): Promise<any> {
-    return this.get<any>('/health')
+  async healthCheck(): Promise<unknown> {
+    return this.get<unknown>('/health')
   }
 }
 

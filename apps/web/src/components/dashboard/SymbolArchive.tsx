@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { Search, Code2, Cpu, Hash, ExternalLink, Zap } from 'lucide-react'
+import { Search, Code2, Cpu, Hash } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Symbol {
-  name: String
+  name: string
   kind: string
   references: number
   cyclomatic: number

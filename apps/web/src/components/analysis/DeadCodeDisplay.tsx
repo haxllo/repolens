@@ -1,7 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle, Trash2 } from 'lucide-react'
+import { CheckCircle, Trash2 } from 'lucide-react'
 
 interface DeadCodeDisplayProps {
   data: {

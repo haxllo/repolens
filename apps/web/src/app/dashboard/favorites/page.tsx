@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { authClient } from '@/lib/auth-client'
-import { Skeleton } from '@/components/ui/skeleton'
 import { 
-  GitBranch, 
   Trash2, 
   ExternalLink, 
   AlertCircle, 
   Bookmark,
-  ChevronRight,
   Box,
   BookOpen,
   Command
@@ -46,7 +43,7 @@ export default function FavoritesPage() {
       setLoading(true)
       const data = await apiClient.get<FavoriteRepository[]>('/favorites')
       setFavorites(data)
-    } catch (err) {
+    } catch {
       setError('Index synchronization failed.')
     } finally {
       setLoading(false)
@@ -57,7 +54,7 @@ export default function FavoritesPage() {
     try {
       await apiClient.delete(`/favorites/${repositoryId}`)
       setFavorites(favorites.filter(f => f.repositoryId !== repositoryId))
-    } catch (err) {
+    } catch {
       console.error('Record erasure failed.')
     }
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, Suspense, useMemo, useEffect } from 'react'
+import { useRef, useState, Suspense, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, Line, Float } from '@react-three/drei'
 import { GraphData, GraphNode } from '@/hooks/useGraphData'
@@ -128,11 +128,14 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
       const theta = Math.sqrt(nCount * Math.PI) * phi
       const r = 15
       
+      // Deterministic jitter based on index
+      const jitter = (i: number) => ((i * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff - 0.5
+      
       return {
         ...node,
-        x: r * Math.cos(theta) * Math.sin(phi) || (Math.random() - 0.5) * 2,
-        y: r * Math.sin(theta) * Math.sin(phi) || (Math.random() - 0.5) * 2,
-        z: r * Math.cos(phi) || (Math.random() - 0.5) * 2,
+        x: r * Math.cos(theta) * Math.sin(phi) || jitter(i) * 2,
+        y: r * Math.sin(theta) * Math.sin(phi) || jitter(i + 1) * 2,
+        z: r * Math.cos(phi) || jitter(i + 2) * 2,
         vx: 0, vy: 0, vz: 0,
       }
     })
@@ -197,9 +200,9 @@ function GraphScene({ data, onNodeClick }: DependencyGraph3DProps) {
         n.vx *= 0.4; n.vy *= 0.4; n.vz *= 0.4
         
         // Absolute NaN/Infinity protection
-        if (!isFinite(n.x)) n.x = (Math.random() - 0.5) * 5
-        if (!isFinite(n.y)) n.y = (Math.random() - 0.5) * 5
-        if (!isFinite(n.z)) n.z = (Math.random() - 0.5) * 5
+        if (!isFinite(n.x)) n.x = ((nodes.indexOf(n) * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff * 5
+        if (!isFinite(n.y)) n.y = (((nodes.indexOf(n) + 1) * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff * 5
+        if (!isFinite(n.z)) n.z = (((nodes.indexOf(n) + 2) * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff * 5
       }
       
       alpha *= 0.96 // Cool down

@@ -24,6 +24,39 @@ interface FileTreeHeatmapProps {
   riskScores?: Record<string, number>;
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-none shadow-2xl">
+        <p className="font-bold text-white text-base mb-1">{data.name}</p>
+        <p className="text-white/40 text-[10px] font-mono break-all mb-3">{data.path}</p>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-8 text-xs">
+            <span className="text-white/60">Lines of Code</span>
+            <span className="text-white font-medium">{data.size}</span>
+          </div>
+          {data.complexity && (
+            <div className="flex justify-between gap-8 text-xs">
+              <span className="text-white/60">Complexity</span>
+              <span className="text-white font-medium">{data.complexity}</span>
+            </div>
+          )}
+          {data.risk !== undefined && (
+            <div className="flex justify-between gap-8 text-xs pt-1.5 border-t border-white/5">
+              <span className="text-white/60">Risk Score</span>
+              <span className={`font-bold ${data.risk > 7 ? 'text-red-400' : data.risk > 4 ? 'text-orange-400' : 'text-lime-400'}`}>
+                {data.risk.toFixed(1)}/10
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps) {
   const treeData = useMemo(() => {
     const root: FileNode = { name: "root", path: "", size: 0, children: [] };
@@ -77,39 +110,6 @@ export function FileTreeHeatmap({ files, riskScores = {} }: FileTreeHeatmapProps
     if (risk < 5) return "#f59e0b";
     if (risk < 7) return "#f97316";
     return "#ef4444";
-  };
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-none shadow-2xl">
-          <p className="font-bold text-white text-base mb-1">{data.name}</p>
-          <p className="text-white/40 text-[10px] font-mono break-all mb-3">{data.path}</p>
-          <div className="space-y-1.5">
-            <div className="flex justify-between gap-8 text-xs">
-              <span className="text-white/60">Lines of Code</span>
-              <span className="text-white font-medium">{data.size}</span>
-            </div>
-            {data.complexity && (
-              <div className="flex justify-between gap-8 text-xs">
-                <span className="text-white/60">Complexity</span>
-                <span className="text-white font-medium">{data.complexity}</span>
-              </div>
-            )}
-            {data.risk !== undefined && (
-              <div className="flex justify-between gap-8 text-xs pt-1.5 border-t border-white/5">
-                <span className="text-white/60">Risk Score</span>
-                <span className={`font-bold ${data.risk > 7 ? 'text-red-400' : data.risk > 4 ? 'text-orange-400' : 'text-lime-400'}`}>
-                  {data.risk.toFixed(1)}/10
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-    return null;
   };
 
   if (files.length === 0) {

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { ChevronRight } from 'lucide-react'
 
-export default function ScanForm({ userId }: { userId?: string }) {
+export default function ScanForm() {
   const router = useRouter()
   const [repoUrl, setRepoUrl] = useState('')
   const [branch, setBranch] = useState('main')

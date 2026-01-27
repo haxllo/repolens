@@ -32,12 +32,11 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
     const edges: Edge[] = [];
     const files = data?.ast?.files || [];
     const deps = data?.dependencies?.graph?.edges || [];
-    const fileRisks = data?.complexity?.fileRisks || {};
 
-    files.forEach((file: any) => {
+    files.forEach((file: { path: string; loc?: number }) => {
       // Handle both complexity fileRisks and general riskScores
       const complexityRisk = data?.complexity?.fileRisks?.[file.path] || 0;
-      const generalRisk = data?.riskScores?.file_risks?.find((r: any) => r.file_path === file.path)?.risk_score * 10 || 0;
+      const generalRisk = data?.riskScores?.file_risks?.find((r: { file_path: string; risk_score: number }) => r.file_path === file.path)?.risk_score * 10 || 0;
       const risk = Math.max(complexityRisk, generalRisk);
 
       if (filter === 'high-risk' && risk < 30) return;
@@ -56,10 +55,10 @@ export function BlueprintCanvas({ data }: BlueprintCanvasProps) {
       });
     });
 
-    deps.forEach((edge: any, i: number) => {
+    deps.forEach((edge: { from: string; to: string }, i: number) => {
         // Find exact node matches for the dependency link
-        const sourceNode = nodes.find(n => n.id === edge.source);
-        const targetNode = nodes.find(n => n.id === edge.target);
+        const sourceNode = nodes.find(n => n.id === edge.from);
+        const targetNode = nodes.find(n => n.id === edge.to);
         
         if (sourceNode && targetNode) {
             edges.push({

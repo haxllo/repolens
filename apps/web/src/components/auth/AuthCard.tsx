@@ -15,7 +15,6 @@ export function AuthCard() {
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
@@ -26,7 +25,7 @@ export function AuthCard() {
         provider: 'github',
         callbackURL: '/dashboard'
       })
-    } catch (error) {
+    } catch {
       toast.error('GitHub authentication failed')
     }
   }
@@ -56,7 +55,7 @@ export function AuthCard() {
         await authClient.signIn.email({
           email,
           password,
-          rememberMe,
+          rememberMe: true,
           callbackURL: '/dashboard',
         }, {
           onSuccess: () => {

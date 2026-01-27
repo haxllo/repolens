@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import mermaid from 'mermaid';
-import { Loader2, AlertTriangle, Terminal } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 mermaid.initialize({
   startOnLoad: false,
@@ -58,7 +58,7 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
 
         const { svg } = await mermaid.render(id, cleanChart);
         setSvg(svg);
-      } catch (err) {
+      } catch {
         setError('Diagram Protocol Error');
       } finally {
         setIsRendering(false);

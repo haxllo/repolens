@@ -22,7 +22,7 @@ export default async function DashboardPage() {
               <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Session_ID</div>
               <div className="font-mono text-[10px] truncate">{userIdentifier}</div>
             </div>
-            <ScanForm userId={userIdentifier} />
+            <ScanForm />
           </section>
         </div>
       </div>

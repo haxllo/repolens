@@ -2,16 +2,16 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, LogIn } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export function HeaderSignIn() {
   return (
-    <Link href="/auth/signin">
-      <button 
-        className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
+    <Link href="/auth/signin" className="inline-flex items-center">
+      <span 
+        className="font-mono text-[10px] uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer"
       >
         Sign in
-      </button>
+      </span>
     </Link>
   )
 }

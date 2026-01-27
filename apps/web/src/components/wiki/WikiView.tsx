@@ -5,11 +5,9 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FileText,
   Terminal,
   Activity,
-  Cpu,
-  ArrowRight
+  Cpu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import MermaidBlock from './MermaidBlock'
@@ -33,7 +31,6 @@ interface WikiViewProps {
       governance?: string[]
     }
   }
-  repoUrl: string
   initialChapter?: number
 }
 
@@ -114,7 +111,7 @@ const WikiComponents = () => ({
   li: ({ children }: any) => <li>{children}</li>,
 });
 
-export function WikiView({ data, repoUrl, initialChapter = 0 }: WikiViewProps) {
+export function WikiView({ data, initialChapter = 0 }: WikiViewProps) {
   const [activeChapter, setActiveView] = useState(initialChapter)
   const chapters = data.chapters || []
   

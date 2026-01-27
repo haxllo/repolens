@@ -27,6 +27,23 @@ interface ComplexityChartsProps {
 
 const COLORS = ["#a2e435", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-none shadow-2xl">
+        <p className="font-bold text-white text-xs mb-1">{label || payload[0].name}</p>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].fill || payload[0].color }} />
+          <p className="text-white/80 text-xs font-medium">
+            {payload[0].value} {payload[0].name === 'count' ? 'Files' : ''}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsProps) {
   const complexityDist = React.useMemo(() => {
     const ranges = [
@@ -88,23 +105,6 @@ export function ComplexityCharts({ files, riskScores = {} }: ComplexityChartsPro
         path: f.path,
       }));
   }, [files]);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-none shadow-2xl">
-          <p className="font-bold text-white text-xs mb-1">{label || payload[0].name}</p>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].fill || payload[0].color }} />
-            <p className="text-white/80 text-xs font-medium">
-              {payload[0].value} {payload[0].name === 'count' ? 'Files' : ''}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Activity, Terminal, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ export default function ScanList({ userId }: { userId?: string }) {
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchScans = async () => {
+  const fetchScans = useCallback(async () => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/user/scans?userId=${userId || 'guest'}&limit=10`
@@ -26,12 +26,12 @@ export default function ScanList({ userId }: { userId?: string }) {
         const data = await response.json()
         setScans(data.scans || [])
       }
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch scans')
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId])
 
   useEffect(() => {
     fetchScans()
@@ -41,7 +41,7 @@ export default function ScanList({ userId }: { userId?: string }) {
       }
     }, 5000)
     return () => clearInterval(interval)
-  }, [userId, scans])
+  }, [fetchScans, scans])
 
   return (
     <div className="w-full">

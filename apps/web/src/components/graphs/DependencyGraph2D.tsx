@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3-force'
 import { GraphNode, GraphLink } from '@/hooks/useGraphData'
 
@@ -216,9 +216,11 @@ export function DependencyGraph2D({
     const y = e.clientY - rect.top
     
     if (isDragging && draggedNode) {
-      draggedNode.fx = (x - offset.x) / scale
-      draggedNode.fy = (y - offset.y) / scale
-      setNodes([...nodes])
+      setNodes(prevNodes => prevNodes.map(n => 
+        n.id === draggedNode.id 
+          ? { ...n, fx: (x - offset.x) / scale, fy: (y - offset.y) / scale }
+          : n
+      ))
     } else if (isDragging) {
       setOffset(prev => ({
         x: prev.x + e.movementX,
@@ -241,16 +243,18 @@ export function DependencyGraph2D({
     setIsDragging(true)
     if (node) {
       setDraggedNode(node)
-      node.fx = node.x
-      node.fy = node.y
+      setNodes(prevNodes => prevNodes.map(n => 
+        n.id === node.id ? { ...n, fx: n.x, fy: n.y } : n
+      ))
     }
   }
 
   const handleMouseUp = () => {
     if (draggedNode) {
       if (onNodeClick && !isDragging) onNodeClick(draggedNode.id)
-      draggedNode.fx = null
-      draggedNode.fy = null
+      setNodes(prevNodes => prevNodes.map(n => 
+        n.id === draggedNode.id ? { ...n, fx: null, fy: null } : n
+      ))
     }
     setIsDragging(false)
     setDraggedNode(null)
