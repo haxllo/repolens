@@ -14,7 +14,8 @@ import {
   Bookmark,
   Hash,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  Github
 } from 'lucide-react'
 import { useCallback } from 'react'
 import { toast } from 'sonner'
@@ -129,47 +130,68 @@ export default function ScanDetailPage() {
   const isFailed = scan.status === 'failed'
 
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-16 pb-24 max-w-7xl mx-auto px-6">
       {/* PANE_HEADER: ARCHIVE_METADATA */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-white/10 pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.4em] text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground">Console</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span>Archive_{scan.scanId.slice(0, 8)}</span>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-12 border-b border-white/5 pb-16">
+        <div className="space-y-8 flex-1 min-w-0">
+          <div className="flex items-center gap-4 font-mono text-[9px] uppercase tracking-[0.5em] text-white/20">
+            <Link href="/dashboard" className="hover:text-lime-400 transition-colors">Console</Link>
+            <div className="w-1 h-1 bg-white/10 rounded-full" />
+            <span className="text-white/40 italic">Archive_Sequence_{scan.scanId.slice(0, 8)}</span>
           </div>
-          <h1 className="text-4xl font-light tracking-tighter leading-none">
-            {getRepoName(scan.repoUrl)}
-          </h1>
-          <div className="flex items-center gap-8 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <GitBranch className="h-3 w-3" />
-              <span>REF: {scan.branch}</span>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-6">
+              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.85] text-white italic truncate">
+                {getRepoName(scan.repoUrl)}
+              </h1>
+              <div className="flex items-center gap-3">
+                <a 
+                  href={scan.repoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="h-10 w-10 flex items-center justify-center border border-white/5 bg-white/[0.02] text-white/40 hover:text-white hover:border-white/20 transition-all rounded-full"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-primary leading-none">Powered by Gemini</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-3 w-3" />
-              <span>VERIFIED: {new Date(scan.createdAt).toLocaleDateString()}</span>
+            <div className="flex flex-wrap items-center gap-x-10 gap-y-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 bg-primary/40 rounded-none" />
+                <span className="text-white/10">REF:</span>
+                <span className="text-white/60 font-bold">{scan.branch}</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 bg-primary/40 rounded-none" />
+                <span className="text-white/10">VERIFIED:</span>
+                <span className="text-white/60 font-bold tracking-widest">{new Date(scan.createdAt).toLocaleDateString()}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col md:items-end gap-6">
-            <div className="flex items-center gap-1">
+        <div className="flex flex-col items-start lg:items-end gap-8 shrink-0">
+            <div className="flex items-center gap-2">
                 {isCompleted && (
                     <button 
                         onClick={toggleBookmark}
                         className={cn(
-                            "h-10 w-10 flex items-center justify-center border transition-all",
+                            "h-12 w-12 flex items-center justify-center border transition-all duration-500",
                             isBookmarked 
-                                ? "bg-primary border-primary text-white" 
-                                : "bg-black border-white/10 text-muted-foreground hover:text-foreground"
+                                ? "bg-primary border-primary text-white shadow-[0_0_20px_rgba(162,228,53,0.2)]" 
+                                : "bg-black border-white/5 text-white/20 hover:text-white hover:border-white/20"
                         )}
                     >
                         <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
                     </button>
                 )}
                 {isCompleted && (
-                    <div className="flex h-10 border border-white/10 bg-black p-0.5">
+                    <div className="flex h-12 border border-white/5 bg-black p-1 shadow-2xl">
                         <ViewToggle 
                           active={activeView === 'archive'} 
                           onClick={() => setActiveView('archive')}
@@ -191,11 +213,14 @@ export default function ScanDetailPage() {
                     </div>
                 )}
             </div>
-            <div className="h-10 flex items-center gap-3 px-6 border border-white/10 bg-white/[0.02]">
-                <StatusIcon status={scan.status} />
-                <span className="font-mono text-[10px] uppercase tracking-[0.3em]">
-                    {scan.status}
-                </span>
+            
+            <div className="flex items-center gap-4">
+                <div className="h-10 flex items-center gap-4 px-6 border border-white/5 bg-white/[0.01] backdrop-blur-sm shadow-xl">
+                    <StatusIcon status={scan.status} />
+                    <span className="font-mono text-[9px] font-black uppercase tracking-[0.4em] text-white/40">
+                        SYSTEM_STATUS // {scan.status}
+                    </span>
+                </div>
             </div>
         </div>
       </div>

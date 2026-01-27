@@ -52,13 +52,20 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
         let cleanChart = chart.trim();
         
         // Ensure valid graph start
-        if (!cleanChart.startsWith('graph') && !cleanChart.startsWith('flowchart')) {
+        if (!cleanChart.startsWith('graph') && !cleanChart.startsWith('flowchart') && !cleanChart.startsWith('sequenceDiagram') && !cleanChart.startsWith('classDiagram')) {
             cleanChart = `graph TD\n${cleanChart}`;
+        }
+
+        // Handle potentially flattened graphs (replace common patterns with newlines if needed)
+        // If it's a long string without newlines but with nodes like A[...] --> B
+        if (!cleanChart.includes('\n') && cleanChart.length > 50) {
+            cleanChart = cleanChart.replace(/([\]\)\}])\s+([A-Z0-9])/g, '$1\n$2');
         }
 
         const { svg } = await mermaid.render(id, cleanChart);
         setSvg(svg);
-      } catch {
+      } catch (err) {
+        console.error('Mermaid Render Fail:', err);
         setError('Diagram Protocol Error');
       } finally {
         setIsRendering(false);
@@ -69,23 +76,26 @@ const MermaidBlock: React.FC<MermaidBlockProps> = ({ chart }) => {
   }, [chart]);
 
   return (
-    <div className="my-16 border border-white/5 bg-[#050505] rounded-none overflow-hidden flex flex-col items-center shadow-2xl">
+    <div className="my-16 border border-white/5 bg-[#050505] rounded-xl overflow-hidden flex flex-col items-center shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)]">
         {/* Schematic Header */}
-        <div className="w-full px-4 py-2 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-lime-400 rounded-none shadow-[0_0_8px_#a3e635]" />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">Blueprint_Registry</span>
+        <div className="w-full px-6 py-3 border-b border-white/5 flex justify-between items-center bg-black/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+                <div className="w-1 h-3 bg-lime-400 rounded-none shadow-[0_0_10px_#a3e635]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 italic">System_Architecture_Model</span>
             </div>
-            <button 
-                onClick={() => setShowRaw(!showRaw)}
-                className="text-[8px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors"
-            >
-                {showRaw ? 'Render' : 'Source'}
-            </button>
+            <div className="flex items-center gap-6">
+                <div className="font-mono text-[8px] text-white/10 uppercase tracking-widest suppress">Vector_Scale: 1.0</div>
+                <button 
+                    onClick={() => setShowRaw(!showRaw)}
+                    className="text-[9px] font-black uppercase tracking-widest text-white/20 hover:text-lime-400 transition-colors"
+                >
+                    {showRaw ? '[ Render_View ]' : '[ Source_Logic ]'}
+                </button>
+            </div>
         </div>
 
         {/* The Drawing Board */}
-        <div className="w-full p-16 flex flex-col items-center justify-center min-h-[400px] relative overflow-auto bg-grid-white/[0.02]">
+        <div className="w-full p-12 md:p-24 flex flex-col items-center justify-center min-h-[500px] relative overflow-auto bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:30px_30px]">
             {/* Blueprint Grid Overlay */}
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:20px_20px]" />
 
