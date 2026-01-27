@@ -21,10 +21,7 @@ export const metadata: Metadata = {
   title: 'RepoLens | Architectural Archive',
   description: 'High-performance repository indexing and architectural diagnostic engine.',
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
+    icon: '/LOGO.svg',
   },
 }
 
