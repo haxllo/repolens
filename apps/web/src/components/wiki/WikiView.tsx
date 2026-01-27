@@ -102,8 +102,12 @@ const WikiComponents = () => ({
     const isCommand = ['bash', 'sh', 'shell', 'zsh', 'powershell', 'cmd'].includes(language.toLowerCase());
     const content = String(children).replace(/\n$/, '');
     const isShort = !content.includes('\n') && content.length < 100;
+    
+    // Robust Mermaid detection
+    const isMermaid = language === 'mermaid' || 
+                     (!inline && (content.startsWith('graph ') || content.startsWith('flowchart ') || content.startsWith('sequenceDiagram') || content.startsWith('classDiagram')));
 
-    if (language === 'mermaid') return <MermaidBlock chart={content} />;
+    if (isMermaid) return <MermaidBlock chart={content} />;
     
     if (!inline && !isShort) {
       return (
