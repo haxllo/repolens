@@ -14,7 +14,7 @@ export default function HomePage() {
       {/* GLOBAL STATUS BAR */}
       <header className="w-full border-b border-white/10 px-6 h-12 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Image src="/LOGO.svg" alt="RepoLens" width={16} height={20} className="opacity-80" />
+          <Image src="/logo.png" alt="RepoLens" width={16} height={20} className="opacity-80" />
           <span className="font-mono text-[10px] uppercase tracking-[0.3em]">RepoLens // System_Online</span>
         </div>
         <nav className="flex items-center gap-8">
